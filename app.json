@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Found Here Mobile Application",
+    "slug": "Found Here Mobile Application",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/foundhere.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/foundhere.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/foundhere.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ravi16.Testmy"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+    }
+  }
+}
