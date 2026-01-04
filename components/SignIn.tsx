@@ -321,14 +321,7 @@ const SignIn: React.FC = () => {
                     </Text>
                   </View>
                 </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => navigation.navigate("Home")}>
-                  <View className="py-4 rounded-xl border border-emerald-600 bg-emerald-50/50 mt-5">
-                    <Text className="text-center text-emerald-700 font-semibold">
-                      home
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                
               </View>
             </ScrollView>
           </LinearGradient>
