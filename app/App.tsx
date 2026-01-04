@@ -12,8 +12,9 @@ import SignUp from "../components/SignUp";
 import Home from "../components/Home";
 import Profile from "../components/Profile";
 import Disease from "../components/Disease";
-import DetectionResults from "../components/DetectionResults";
-import PineappleGrowthDetection from "../components/PineappleGrowthDetection";
+import DetectionResults from "../components/PinnapleGrowth/DetectionResults";
+import PineappleDetection from "../components/PinnapleGrowth/PineappleDetection";
+import PlantTracker from "@/components/PinnapleGrowth/PlantTracker";
 
 /* ---------- TYPES ---------- */
 export type RootStackParamList = {
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Disease: undefined;
   DetectionResults: undefined;
+  PineappleDetection: undefined;
   PlantTracker: undefined;
 };
 
@@ -57,11 +59,12 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Disease" component={Disease} />
-        <Stack.Screen name="DetectionResults" component={DetectionResults} />
         <Stack.Screen
-          name="PlantTracker"
-          component={PineappleGrowthDetection}
+          name="PineappleDetection"
+          component={PineappleDetection}
         />
+        <Stack.Screen name="DetectionResults" component={DetectionResults} />
+        <Stack.Screen name="PlantTracker" component={PlantTracker} />
       </Stack.Navigator>
     </NavigationContainer>
   );

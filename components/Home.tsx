@@ -1,24 +1,24 @@
-import React from 'react';
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
+  Alert,
   Image,
   ScrollView,
-  Alert,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { RootStackParamList } from './types';
-import { useAppSelector } from '../store/store';
+import { useAppSelector } from "../store/store";
+import { RootStackParamList } from "./types";
 
-const logo = require('../assets/p.png');
+const logo = require("../assets/p.png");
 
-type HomeNavProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type HomeNavProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 
 const Home: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -26,49 +26,45 @@ const Home: React.FC = () => {
 
   const { user } = useAppSelector((state) => state.auth);
 
-  const displayName =
-    user?.name || user?.fullName || user?.email || 'Farmer';
+  const displayName = user?.name || user?.email || "Farmer";
 
   const handleStartDetection = () => {
-    Alert.alert(
-      'Start Detection',
-      'Here you will open the camera and run the AI model.\n\nYou can link this to your detection screen later.'
-    );
+    navigation.navigate("PineappleDetection");
   };
 
   const handleViewAlerts = () => {
     Alert.alert(
-      'Alerts',
-      'This will show a list of pest alerts, timestamps, and locations.'
+      "Alerts",
+      "This will show a list of pest alerts, timestamps, and locations."
     );
   };
 
   const handleFieldSummary = () => {
     Alert.alert(
-      'Field Summary',
-      'This will show summary charts for pest counts and risk levels over time.'
+      "Field Summary",
+      "This will show summary charts for pest counts and risk levels over time."
     );
   };
 
   const handleSettings = () => {
     Alert.alert(
-      'Settings',
-      'This will let you adjust thresholds, notification preferences, and account info.'
+      "Settings",
+      "This will let you adjust thresholds, notification preferences, and account info."
     );
   };
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Do you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert("Sign Out", "Do you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Sign Out',
-        style: 'destructive',
+        text: "Sign Out",
+        style: "destructive",
         onPress: () => {
           // TODO: dispatch your logout/clearAuth action here if you implement it
           // dispatch(logout());
           navigation.reset({
             index: 0,
-            routes: [{ name: 'SignIn' }],
+            routes: [{ name: "SignIn" }],
           });
         },
       },
@@ -85,7 +81,7 @@ const Home: React.FC = () => {
         }}
       >
         <LinearGradient
-          colors={['#064e3b', '#166534', '#facc15']}
+          colors={["#064e3b", "#166534", "#facc15"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           className="flex-1"
@@ -101,7 +97,7 @@ const Home: React.FC = () => {
                 <Image
                   source={logo}
                   className="w-10 h-10 mr-2"
-                  style={{ resizeMode: 'contain' }}
+                  style={{ resizeMode: "contain" }}
                 />
                 <View>
                   <Text className="text-xs text-emerald-50 opacity-80">
@@ -129,7 +125,7 @@ const Home: React.FC = () => {
               <View
                 className="bg-white/95 rounded-2xl px-4 py-4 mb-4"
                 style={{
-                  shadowColor: '#000',
+                  shadowColor: "#000",
                   shadowOpacity: 0.15,
                   shadowRadius: 12,
                   shadowOffset: { width: 0, height: 6 },
@@ -141,11 +137,7 @@ const Home: React.FC = () => {
                     Field overview
                   </Text>
                   <View className="flex-row items-center bg-emerald-50 px-2 py-1 rounded-full">
-                    <Ionicons
-                      name="cloud-outline"
-                      size={14}
-                      color="#166534"
-                    />
+                    <Ionicons name="cloud-outline" size={14} color="#166534" />
                     <Text className="text-[11px] text-emerald-700 ml-1">
                       Live monitoring
                     </Text>
@@ -178,9 +170,7 @@ const Home: React.FC = () => {
                     <Text className="text-emerald-900 font-bold text-xl">
                       -
                     </Text>
-                    <Text className="text-[11px] text-gray-500">
-                      Last scan
-                    </Text>
+                    <Text className="text-[11px] text-gray-500">Last scan</Text>
                   </View>
                 </View>
               </View>
@@ -198,22 +188,22 @@ const Home: React.FC = () => {
                   className="w-1/2 px-1 mb-3"
                   onPress={handleStartDetection}
                 >
-                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between">
-                    <View className="flex-row items-center mb-2">
-                      <View className="w-8 h-8 rounded-xl bg-emerald-100 items-center justify-center mr-2">
-                        <Ionicons
-                          name="camera-outline"
-                          size={18}
-                          color="#166534"
-                        />
-                      </View>
-                      <Text className="text-sm font-semibold text-emerald-900 flex-shrink">
+                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between shadow-md">
+                    <View className="bg-emerald-100 w-12 h-12 rounded-xl items-center justify-center">
+                      <MaterialCommunityIcons
+                        name="camera-iris"
+                        size={28}
+                        color="#059669"
+                      />
+                    </View>
+                    <View>
+                      <Text className="text-base font-bold text-emerald-900 mb-1">
                         Start Detection
                       </Text>
+                      <Text className="text-xs text-gray-600">
+                        Analyze plant growth
+                      </Text>
                     </View>
-                    <Text className="text-[11px] text-gray-500">
-                      Open the camera and scan pineapple plants for pests.
-                    </Text>
                   </View>
                 </TouchableOpacity>
 
@@ -222,22 +212,22 @@ const Home: React.FC = () => {
                   className="w-1/2 px-1 mb-3"
                   onPress={handleViewAlerts}
                 >
-                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between">
-                    <View className="flex-row items-center mb-2">
-                      <View className="w-8 h-8 rounded-xl bg-amber-100 items-center justify-center mr-2">
-                        <Ionicons
-                          name="alert-circle-outline"
-                          size={18}
-                          color="#92400e"
-                        />
-                      </View>
-                      <Text className="text-sm font-semibold text-emerald-900 flex-shrink">
+                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between shadow-md">
+                    <View className="bg-amber-100 w-12 h-12 rounded-xl items-center justify-center">
+                      <MaterialCommunityIcons
+                        name="bell-alert"
+                        size={28}
+                        color="#d97706"
+                      />
+                    </View>
+                    <View>
+                      <Text className="text-base font-bold text-emerald-900 mb-1">
                         View Alerts
                       </Text>
+                      <Text className="text-xs text-gray-600">
+                        Check pest warnings
+                      </Text>
                     </View>
-                    <Text className="text-[11px] text-gray-500">
-                      See all pest alerts, severity levels, and timestamps.
-                    </Text>
                   </View>
                 </TouchableOpacity>
 
@@ -246,22 +236,22 @@ const Home: React.FC = () => {
                   className="w-1/2 px-1 mb-3"
                   onPress={handleFieldSummary}
                 >
-                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between">
-                    <View className="flex-row items-center mb-2">
-                      <View className="w-8 h-8 rounded-xl bg-emerald-100 items-center justify-center mr-2">
-                        <Ionicons
-                          name="stats-chart-outline"
-                          size={18}
-                          color="#166534"
-                        />
-                      </View>
-                      <Text className="text-sm font-semibold text-emerald-900 flex-shrink">
+                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between shadow-md">
+                    <View className="bg-blue-100 w-12 h-12 rounded-xl items-center justify-center">
+                      <MaterialCommunityIcons
+                        name="chart-bar"
+                        size={28}
+                        color="#2563eb"
+                      />
+                    </View>
+                    <View>
+                      <Text className="text-base font-bold text-emerald-900 mb-1">
                         Field Summary
                       </Text>
+                      <Text className="text-xs text-gray-600">
+                        View analytics
+                      </Text>
                     </View>
-                    <Text className="text-[11px] text-gray-500">
-                      Track pest trends, hotspot locations, and history.
-                    </Text>
                   </View>
                 </TouchableOpacity>
 
@@ -270,22 +260,22 @@ const Home: React.FC = () => {
                   className="w-1/2 px-1 mb-3"
                   onPress={handleSettings}
                 >
-                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between">
-                    <View className="flex-row items-center mb-2">
-                      <View className="w-8 h-8 rounded-xl bg-slate-100 items-center justify-center mr-2">
-                        <Ionicons
-                          name="settings-outline"
-                          size={18}
-                          color="#0f172a"
-                        />
-                      </View>
-                      <Text className="text-sm font-semibold text-emerald-900 flex-shrink">
+                  <View className="bg-white/95 rounded-2xl px-3 py-4 h-32 justify-between shadow-md">
+                    <View className="bg-purple-100 w-12 h-12 rounded-xl items-center justify-center">
+                      <MaterialCommunityIcons
+                        name="cog"
+                        size={28}
+                        color="#7c3aed"
+                      />
+                    </View>
+                    <View>
+                      <Text className="text-base font-bold text-emerald-900 mb-1">
                         Settings
                       </Text>
+                      <Text className="text-xs text-gray-600">
+                        Manage preferences
+                      </Text>
                     </View>
-                    <Text className="text-[11px] text-gray-500">
-                      Adjust thresholds, notifications, and account settings.
-                    </Text>
                   </View>
                 </TouchableOpacity>
               </View>

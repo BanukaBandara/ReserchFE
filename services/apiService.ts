@@ -16,18 +16,18 @@ export class APIError extends Error {
 /**
  * Test connection to the backend server
  */
-export const testConnection = async (): Promise<boolean> => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/health`, {
-            method: 'GET',
-            timeout: 5000,
-        } as any);
-        return response.ok;
-    } catch (error) {
-        console.error('Connection test failed:', error);
-        return false;
-    }
-};
+// export const testConnection = async (): Promise<boolean> => {
+//     try {
+//         const response = await fetch(`${API_BASE_URL}/api/health`, {
+//             method: 'GET',
+//             timeout: 5000,
+//         } as any);
+//         return response.ok;
+//     } catch (error) {
+//         console.error('Connection test failed:', error);
+//         return false;
+//     }
+// };
 
 /**
  * Detect pineapple growth from an image

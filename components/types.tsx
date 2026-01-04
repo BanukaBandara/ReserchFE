@@ -2,9 +2,11 @@ export type RootStackParamList = {
   Splash: undefined;
   SignIn: undefined;
   SignUp: undefined;
-    Home: undefined;
+  Home: undefined;
   Disease: undefined;
   Profile: undefined;
-  Main: undefined; // ✅ BottomNavigation container
+  Main: undefined;
+  PineappleDetection: undefined;
+  DetectionResults: { detectionId: string } | undefined;
+  PlantTracker: undefined;
 };
-
