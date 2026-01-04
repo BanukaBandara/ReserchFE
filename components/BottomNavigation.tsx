@@ -1,42 +1,45 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
 
-import Home from './Home';
-import Pd from './Disease';
-import Profile from './Profile';
-import { RootStackParamList } from './types'; // ✅ import type properly
+import Home from "./Home";
+import PestDetection from "./PestDetection";
+import DiseaseDetection from "./Disease";
+//import Growth from "./Growth";
 
-const Tab = createBottomTabNavigator<RootStackParamList>();
+export type MainTabParamList = {
+  Home: undefined;
+  PestDetection: undefined;
+  DiseaseDetection: undefined;
+  Growth: undefined;
+};
 
-const BottomNavigation: React.FC = () => {
+const Tab = createBottomTabNavigator<MainTabParamList>();
+
+export default function BottomNavigation() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: '#166534',
-        tabBarInactiveTintColor: '#6b7280',
-        tabBarStyle: {
-          backgroundColor: '#ecfdf5',
-          borderTopWidth: 0,
-          elevation: 10,
-        },
+        headerTitleAlign: "center",
+        tabBarActiveTintColor: "#0f766e",
+        tabBarInactiveTintColor: "#6b7280",
+        tabBarStyle: { height: 62, paddingBottom: 8, paddingTop: 6 },
         tabBarIcon: ({ color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'ellipse-outline';
+          let iconName: keyof typeof Ionicons.glyphMap = "home-outline";
 
-          if (route.name === 'Home') iconName = 'home-outline';
-          else if (route.name === 'Disease') iconName = 'leaf-outline';
-          else if (route.name === 'Profile') iconName = 'person-outline';
+          if (route.name === "Home") iconName = "home-outline";
+          if (route.name === "PestDetection") iconName = "bug-outline";
+          if (route.name === "Disease") iconName = "leaf-outline";
+         // if (route.name === "Growth") iconName = "trending-up-outline";
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={Home} options={{ title: 'Home' }} />
-      <Tab.Screen name="Disease" component={Pd} options={{ title: 'Disease' }} />
-      <Tab.Screen name="Profile" component={Profile} options={{ title: 'Profile' }} />
+      <Tab.Screen name="Home" component={Home} options={{ title: "Home" }} />
+      <Tab.Screen name="PestDetection" component={PestDetection} options={{ title: "Pest Detection" }} />
+      <Tab.Screen name="DiseaseDetection" component={DiseaseDetection} options={{ title: "Disease Detection" }} />
+      <Tab.Screen name="Growth" component={Growth} options={{ title: "Plant Growth" }} />
     </Tab.Navigator>
   );
-};
-
-export default BottomNavigation;
+}

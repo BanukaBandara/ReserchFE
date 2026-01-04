@@ -12,6 +12,7 @@ import SignUp from '../components/SignUp';
 import Home from '../components/Home';
 import Profile from '../components/Profile';
 import Disease from '../components/Disease';
+import PestDetection from '@/components/PestDetection';
 
 /* ---------- TYPES ---------- */
 export type RootStackParamList = {
@@ -53,6 +54,7 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Disease" component={Disease} />
+        <Stack.Screen name="PestDetection" component={PestDetection} />
       </Stack.Navigator>
     </NavigationContainer>
   );
