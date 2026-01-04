@@ -3,12 +3,15 @@ import { configureStore } from '@reduxjs/toolkit';
 import { useDispatch, useSelector, TypedUseSelectorHook } from 'react-redux';
 import authReducer from './slices/authSlice';
 import itemReducer from './slices/itemsSlice';
+import detectionReducer from './slices/detectionSlice';
+import plantReducer from './slices/plantSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     items: itemReducer,
-    // Add other reducers here as your app grows
+    detections: detectionReducer,
+    plants: plantReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
