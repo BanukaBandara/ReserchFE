@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -8,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type Prediction = {
   disease: string;
@@ -32,7 +34,6 @@ type DiseaseInfo = {
   remedies: string[];
 };
 
-// Diseases
 const DISEASES: DiseaseInfo[] = [
   {
     disease: 'Crown Rot',
@@ -108,8 +109,6 @@ const Pd: React.FC = () => {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [prediction, setPrediction] = useState<Prediction | null>(null);
-
-  // Collapsible state for diseases
   const [expandedDiseases, setExpandedDiseases] = useState<string[]>([]);
 
   const confidenceText = useMemo(() => {
@@ -183,15 +182,10 @@ const Pd: React.FC = () => {
     }
   };
 
-  const severityBadgeClass = (sev: Prediction['severity']) => {
-    if (sev === 'Low') return 'bg-emerald-100';
-    if (sev === 'Medium') return 'bg-amber-100';
-    return 'bg-red-100';
-  };
-  const severityTextClass = (sev: Prediction['severity']) => {
-    if (sev === 'Low') return 'text-emerald-700';
-    if (sev === 'Medium') return 'text-amber-800';
-    return 'text-red-700';
+  const getSeverityColor = (sev: Prediction['severity']) => {
+    if (sev === 'Low') return { bg: '#d1fae5', text: '#065f46' };
+    if (sev === 'Medium') return { bg: '#fef3c7', text: '#92400e' };
+    return { bg: '#fee2e2', text: '#991b1b' };
   };
 
   const handleLogout = () => {
@@ -208,152 +202,300 @@ const Pd: React.FC = () => {
   };
 
   return (
-    <View className="flex-1 bg-emerald-900">
-      <View className="flex-1" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+    <View style={{ flex: 1, backgroundColor: '#064e3b' }}>
+      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}>
         <LinearGradient
-          colors={['#064e3b', '#166534', '#facc15']}
+          colors={['#064e3b', '#166534', '#15803d']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          className="flex-1"
+          end={{ x: 0, y: 1 }}
+          style={{ flex: 1 }}
         >
-          {/* Header */}
-          <View className="px-5 pt-4 pb-3 flex-row items-center justify-between">
-            <View className="flex-1">
-              <Text className="text-amber-100 text-lg font-semibold">
-                Disease Identification
-              </Text>
-              <Text className="text-emerald-50/90 text-xs mt-1">
-                Capture a pineapple leaf image and let AI identify possible disease symptoms.
-              </Text>
-            </View>
-            <TouchableOpacity
-              className="flex-row items-center bg-emerald-900/40 px-3 py-2 rounded-full"
+          {/* Fixed Header */}
+          <View style={{
+            paddingHorizontal: 20,
+            paddingTop: 16,
+            paddingBottom: 16,
+            backgroundColor: 'rgba(0,0,0,0.15)',
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={{ color: '#fef3c7', fontSize: 20, fontWeight: '700', letterSpacing: 0.3 }}>
+                  Disease Detection
+                </Text>
+                <Text style={{ color: '#fef9e7', fontSize: 12, marginTop: 4, opacity: 0.9 }}>
+                  AI-powered pineapple disease identification
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(254, 243, 199, 0.15)',
+                  paddingHorizontal: 14,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: 'rgba(254, 243, 199, 0.3)',
+                }}
                 onPress={handleLogout}
               >
-                <Ionicons name="log-out-outline" size={18} color="#fefce8" />
-                  <Text className="text-xs text-amber-100 ml-1 font-medium">
-                      Sign Out
-                  </Text>
-            </TouchableOpacity>
+                <Ionicons name="log-out-outline" size={16} color="#fef3c7" />
+                <Text style={{ fontSize: 12, color: '#fef3c7', marginLeft: 6, fontWeight: '600' }}>
+                  Sign Out
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <ScrollView 
+            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 30 }}
+            showsVerticalScrollIndicator={false}
+          >
             {/* Image Card */}
-            <View className="px-5 mt-2">
-              <View className="bg-white/95 rounded-3xl p-4">
-                <Text className="text-emerald-900 font-semibold text-sm mb-3">Image Preview</Text>
-                <View className="rounded-2xl overflow-hidden bg-gray-100 h-56 items-center justify-center">
-                  {imageUri ? (
-                    <Image source={{ uri: imageUri }} style={{ width: '100%', height: '100%' }} />
-                  ) : (
-                    <View className="items-center">
-                      <Ionicons name="image-outline" size={36} color="#9CA3AF" />
-                      <Text className="text-gray-400 text-xs mt-2">No image selected</Text>
-                    </View>
-                  )}
-                </View>
-
-                <View className="flex-row mt-4">
-                  <TouchableOpacity
-                    className="flex-1 bg-emerald-50 border border-emerald-200 rounded-2xl py-3 flex-row items-center justify-center mr-2"
-                    onPress={pickFromCamera}
-                  >
-                    <Ionicons name="camera-outline" size={18} color="#166534" />
-                    <Text className="text-emerald-800 font-semibold ml-2 text-sm">Camera</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    className="flex-1 bg-emerald-50 border border-emerald-200 rounded-2xl py-3 flex-row items-center justify-center"
-                    onPress={pickFromGallery}
-                  >
-                    <Ionicons name="images-outline" size={18} color="#166534" />
-                    <Text className="text-emerald-800 font-semibold ml-2 text-sm">Gallery</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity
-                  onPress={analyzeImage}
-                  disabled={isAnalyzing}
-                  className="mt-3"
-                >
-                  <LinearGradient
-                    colors={isAnalyzing ? ['#a3a3a3', '#a3a3a3'] : ['#166534', '#22c55e']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    className="py-4 rounded-2xl flex-row justify-center items-center"
-                  >
-                    {isAnalyzing && <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />}
-                    <Text className="text-white font-semibold text-base">
-                      {isAnalyzing ? 'Analyzing…' : 'Analyze Image'}
+            <View style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 20,
+              padding: 20,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+              elevation: 5,
+            }}>
+              <Text style={{ color: '#064e3b', fontWeight: '700', fontSize: 15, marginBottom: 14 }}>
+                Image Upload
+              </Text>
+              
+              <View style={{
+                borderRadius: 16,
+                overflow: 'hidden',
+                backgroundColor: '#f3f4f6',
+                height: 240,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 2,
+                borderColor: '#e5e7eb',
+                borderStyle: 'dashed',
+              }}>
+                {imageUri ? (
+                  <Image 
+                    source={{ uri: imageUri }} 
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={{ alignItems: 'center' }}>
+                    <Ionicons name="cloud-upload-outline" size={48} color="#9ca3af" />
+                    <Text style={{ color: '#6b7280', fontSize: 13, marginTop: 12, fontWeight: '500' }}>
+                      No image selected
                     </Text>
-                  </LinearGradient>
+                  </View>
+                )}
+              </View>
+
+              <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#f0fdf4',
+                    borderWidth: 1.5,
+                    borderColor: '#86efac',
+                    borderRadius: 14,
+                    paddingVertical: 14,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={pickFromCamera}
+                >
+                  <Ionicons name="camera" size={20} color="#166534" />
+                  <Text style={{ color: '#166534', fontWeight: '700', marginLeft: 8, fontSize: 14 }}>
+                    Camera
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#f0fdf4',
+                    borderWidth: 1.5,
+                    borderColor: '#86efac',
+                    borderRadius: 14,
+                    paddingVertical: 14,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={pickFromGallery}
+                >
+                  <Ionicons name="images" size={20} color="#166534" />
+                  <Text style={{ color: '#166534', fontWeight: '700', marginLeft: 8, fontSize: 14 }}>
+                    Gallery
+                  </Text>
                 </TouchableOpacity>
               </View>
+
+              <TouchableOpacity
+                onPress={analyzeImage}
+                disabled={isAnalyzing}
+                style={{ marginTop: 16 }}
+              >
+                <LinearGradient
+                  colors={isAnalyzing ? ['#9ca3af', '#9ca3af'] : ['#15803d', '#16a34a']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    paddingVertical: 16,
+                    borderRadius: 14,
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {isAnalyzing && <ActivityIndicator color="#fff" style={{ marginRight: 10 }} />}
+                  <Text style={{ color: '#ffffff', fontWeight: '700', fontSize: 16 }}>
+                    {isAnalyzing ? 'Analyzing Image...' : 'Analyze Image'}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
 
-            {/* Result */}
+            {/* Result Card */}
             {prediction && (
-              <View className="px-5 mt-4">
-                <View className="bg-white/95 rounded-3xl p-5">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-emerald-900 font-bold text-base">Result</Text>
-                    <View className={`px-3 py-1 rounded-full ${severityBadgeClass(prediction.severity)}`}>
-                      <Text className={`text-xs font-semibold ${severityTextClass(prediction.severity)}`}>
-                        {prediction.severity} risk
+              <View style={{
+                backgroundColor: '#ffffff',
+                borderRadius: 20,
+                padding: 20,
+                marginTop: 20,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.1,
+                shadowRadius: 12,
+                elevation: 5,
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Text style={{ color: '#064e3b', fontWeight: '700', fontSize: 17 }}>
+                    Detection Result
+                  </Text>
+                  <View style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 12,
+                    backgroundColor: getSeverityColor(prediction.severity).bg,
+                  }}>
+                    <Text style={{
+                      fontSize: 12,
+                      fontWeight: '700',
+                      color: getSeverityColor(prediction.severity).text,
+                    }}>
+                      {prediction.severity} Risk
+                    </Text>
+                  </View>
+                </View>
+                
+                <Text style={{ color: '#064e3b', fontSize: 18, fontWeight: '700', marginTop: 8 }}>
+                  {prediction.disease}
+                </Text>
+                <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 4, fontWeight: '500' }}>
+                  {confidenceText}
+                </Text>
+                
+                <View style={{ marginTop: 18, paddingTop: 18, borderTopWidth: 1, borderTopColor: '#e5e7eb' }}>
+                  <Text style={{ color: '#064e3b', fontWeight: '700', fontSize: 14, marginBottom: 10 }}>
+                    Recommended Actions
+                  </Text>
+                  {prediction.notes.map((n, idx) => (
+                    <View key={idx} style={{ flexDirection: 'row', marginBottom: 10, alignItems: 'flex-start' }}>
+                      <Ionicons name="checkmark-circle" size={18} color="#16a34a" style={{ marginTop: 2 }} />
+                      <Text style={{ color: '#374151', fontSize: 13, marginLeft: 10, flex: 1, lineHeight: 20 }}>
+                        {n}
                       </Text>
                     </View>
-                  </View>
-                  <Text className="text-emerald-900 text-lg font-semibold mt-2">{prediction.disease}</Text>
-                  <Text className="text-gray-500 text-xs mt-1">{confidenceText}</Text>
-                  <View className="mt-4">
-                    <Text className="text-emerald-900 font-semibold text-sm mb-2">Recommended Actions</Text>
-                    {prediction.notes.map((n, idx) => (
-                      <View key={idx} className="flex-row mb-2">
-                        <Ionicons name="checkmark-circle" size={16} color="#166534" />
-                        <Text className="text-gray-700 text-sm ml-2 flex-1">{n}</Text>
-                      </View>
-                    ))}
-                  </View>
-                  <Text className="text-[11px] text-gray-400 mt-3">
-                    Note: AI-assisted suggestion. Confirm with an agronomist for critical decisions.
+                  ))}
+                </View>
+                
+                <View style={{
+                  marginTop: 16,
+                  paddingTop: 16,
+                  borderTopWidth: 1,
+                  borderTopColor: '#e5e7eb',
+                }}>
+                  <Text style={{ fontSize: 11, color: '#9ca3af', lineHeight: 16, textAlign: 'center' }}>
+                    ⚠️ AI-assisted diagnosis. Please consult with a certified agronomist for critical decisions.
                   </Text>
                 </View>
               </View>
             )}
 
-            {/* Treatment & Prevention - Only Diseases */}
-            <View className="px-5 mt-6">
-              <Text className="text-amber-100 font-semibold text-base mb-3">
-                Treatment & Prevention
+            {/* Treatment & Prevention */}
+            <View style={{ marginTop: 28 }}>
+              <Text style={{ color: '#fef3c7', fontWeight: '700', fontSize: 17, marginBottom: 14 }}>
+                Disease Reference Guide
               </Text>
 
-              {/* Diseases */}
-              {DISEASES.map((item) => (
-                <TouchableOpacity
-                  key={item.disease}
-                  onPress={() => toggleDisease(item.disease)}
-                  className="bg-white rounded-2xl p-4 mb-3"
-                >
-                  <Text className="text-red-700 font-semibold">{item.disease}</Text>
-                  {expandedDiseases.includes(item.disease) && (
-                    <>
-                      <Text className="text-emerald-900 font-semibold mt-2">Prevention Tips:</Text>
-                      {item.prevention.map((tip, idx) => (
-                        <Text key={idx} className="text-gray-700 text-xs mt-1">• {tip}</Text>
-                      ))}
-                      <Text className="text-emerald-900 font-semibold mt-2">Remedies:</Text>
-                      {item.remedies.map((step, idx) => (
-                        <Text key={idx} className="text-gray-700 text-xs mt-1">{idx + 1}. {step}</Text>
-                      ))}
-                    </>
-                  )}
-                </TouchableOpacity>
-              ))}
+              {DISEASES.map((item) => {
+                const isExpanded = expandedDiseases.includes(item.disease);
+                return (
+                  <TouchableOpacity
+                    key={item.disease}
+                    onPress={() => toggleDisease(item.disease)}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      borderRadius: 16,
+                      padding: 16,
+                      marginBottom: 12,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.08,
+                      shadowRadius: 8,
+                      elevation: 3,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: '#dc2626', fontWeight: '700', fontSize: 15, flex: 1 }}>
+                        {item.disease}
+                      </Text>
+                      <Ionicons 
+                        name={isExpanded ? "chevron-up" : "chevron-down"} 
+                        size={20} 
+                        color="#6b7280" 
+                      />
+                    </View>
+                    
+                    {isExpanded && (
+                      <View style={{ marginTop: 14 }}>
+                        <Text style={{ color: '#064e3b', fontWeight: '700', fontSize: 13, marginBottom: 8 }}>
+                          Prevention Tips
+                        </Text>
+                        {item.prevention.map((tip, idx) => (
+                          <Text key={idx} style={{ color: '#4b5563', fontSize: 12, marginBottom: 6, lineHeight: 18 }}>
+                            • {tip}
+                          </Text>
+                        ))}
+                        
+                        <Text style={{ color: '#064e3b', fontWeight: '700', fontSize: 13, marginTop: 12, marginBottom: 8 }}>
+                          Treatment Steps
+                        </Text>
+                        {item.remedies.map((step, idx) => (
+                          <Text key={idx} style={{ color: '#4b5563', fontSize: 12, marginBottom: 6, lineHeight: 18 }}>
+                            {idx + 1}. {step}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-              <View className="px-5 mt-4 mb-10">
-                <Text className="text-[11px] text-emerald-50/90 text-center">
-                  Powered by AI • Pineapple Disease & Pest Research Project
-                </Text>
-              </View>
+            {/* Footer */}
+            <View style={{ marginTop: 24, paddingVertical: 16 }}>
+              <Text style={{ fontSize: 11, color: 'rgba(254, 249, 231, 0.7)', textAlign: 'center', lineHeight: 16 }}>
+                Powered by AI Technology
+              </Text>
+              <Text style={{ fontSize: 11, color: 'rgba(254, 249, 231, 0.7)', textAlign: 'center', marginTop: 4 }}>
+                Pineapple Disease & Pest Research Project
+              </Text>
             </View>
           </ScrollView>
         </LinearGradient>
