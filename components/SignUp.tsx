@@ -230,7 +230,7 @@ const SignUp: React.FC = () => {
 
                 {/* FULL NAME */}
                 <View className="mb-4">
-                  <Text className="text-gray-700 mb-2 text-sm">Full Name</Text>
+                  <Text className="text-gray-700 mb-2 text-sm">UserName</Text>
                   <View
                     className={`flex-row items-center border rounded-xl px-4 py-3 bg-gray-50 ${
                       isNameFocused ? 'border-emerald-600' : 'border-gray-300'
