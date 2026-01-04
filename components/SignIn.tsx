@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,28 +10,28 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import axios from 'axios';
-import { RootStackParamList } from './types';
-import { environment } from '@/environment/environment';
-import { useAppDispatch, useAppSelector } from '../store/store';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import axios from "axios";
+import { RootStackParamList } from "./types";
+import { environment } from "@/environment/environment";
+import { useAppDispatch, useAppSelector } from "../store/store";
 import {
   setLoading,
   loginFailure,
   persistLogin,
   clearError,
-} from '../store/slices/authSlice';
+} from "../store/slices/authSlice";
 
-const logo = require('../assets/p.png');
+const logo = require("../assets/p.png");
 
 type SignInNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'SignIn'
+  "SignIn"
 >;
 
 const SignIn: React.FC = () => {
@@ -44,8 +44,8 @@ const SignIn: React.FC = () => {
     (state) => state.auth
   );
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isEmailFocused, setIsEmailFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,7 +69,7 @@ const SignIn: React.FC = () => {
     ) {
       hasNavigated.current = true;
       setTimeout(() => {
-        navigation.navigate('Home');
+        navigation.navigate("Home");
       }, 150);
     }
   }, [isAuthenticated, token, shouldAutoNavigate, navigation]);
@@ -82,13 +82,13 @@ const SignIn: React.FC = () => {
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email');
+      Alert.alert("Error", "Please enter a valid email");
       return;
     }
 
@@ -110,31 +110,31 @@ const SignIn: React.FC = () => {
         await dispatch(persistLogin(token, user));
         setShouldAutoNavigate(true);
 
-        Alert.alert('Success', message || 'Login successful!', [
+        Alert.alert("Success", message || "Login successful!", [
           {
-            text: 'OK',
+            text: "OK",
             onPress: () => {
               hasNavigated.current = true;
-              navigation.navigate('Home');
+              navigation.navigate("Home");
             },
           },
         ]);
       } else {
-        dispatch(loginFailure(message || 'Login failed'));
-        Alert.alert('Error', message || 'Login failed');
+        dispatch(loginFailure(message || "Login failed"));
+        Alert.alert("Error", message || "Login failed");
       }
     } catch (err: any) {
-      let msg = 'An error occurred';
+      let msg = "An error occurred";
 
       if (err.response) {
-        if (err.response.status === 401) msg = 'Invalid email or password';
-        else msg = err.response.data.message || 'Login failed';
+        if (err.response.status === 401) msg = "Invalid email or password";
+        else msg = err.response.data.message || "Login failed";
       } else {
-        msg = 'Network error. Please try again.';
+        msg = "Network error. Please try again.";
       }
 
       dispatch(loginFailure(msg));
-      Alert.alert('Login Failed', msg);
+      Alert.alert("Login Failed", msg);
     }
   };
 
@@ -149,10 +149,10 @@ const SignIn: React.FC = () => {
       >
         <KeyboardAvoidingView
           className="flex-1"
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           <LinearGradient
-            colors={['#064e3b', '#166534', '#facc15']}
+            colors={["#064e3b", "#166534", "#facc15"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             className="flex-1"
@@ -167,8 +167,8 @@ const SignIn: React.FC = () => {
               <View className="items-center pt-10 pb-6">
                 <Image
                   source={logo}
-                  className="w-24 h-24 mb-4"
-                  style={{ resizeMode: 'contain' }}
+                  className="w-28 h-28 mb-4"
+                  style={{ resizeMode: "contain" }}
                 />
                 <Text className="text-xl font-bold text-amber-300 tracking-widest">
                   PINEAPPLE ASSISTANT
@@ -182,7 +182,7 @@ const SignIn: React.FC = () => {
               <View
                 className="bg-white/95 mx-5 rounded-3xl px-6 py-7"
                 style={{
-                  shadowColor: '#000',
+                  shadowColor: "#000",
                   shadowOpacity: 0.15,
                   shadowRadius: 12,
                   shadowOffset: { width: 0, height: 8 },
@@ -209,13 +209,13 @@ const SignIn: React.FC = () => {
                   <Text className="text-gray-700 mb-2 text-sm">Email</Text>
                   <View
                     className={`flex-row items-center border rounded-xl px-4 py-3 bg-gray-50 ${
-                      isEmailFocused ? 'border-emerald-600' : 'border-gray-300'
+                      isEmailFocused ? "border-emerald-600" : "border-gray-300"
                     }`}
                   >
                     <Ionicons
                       name="mail-outline"
                       size={18}
-                      color={isEmailFocused ? '#047857' : '#9CA3AF'}
+                      color={isEmailFocused ? "#047857" : "#9CA3AF"}
                       style={{ marginRight: 8 }}
                     />
                     <TextInput
@@ -238,14 +238,14 @@ const SignIn: React.FC = () => {
                   <View
                     className={`flex-row items-center border rounded-xl px-4 py-3 bg-gray-50 ${
                       isPasswordFocused
-                        ? 'border-emerald-600'
-                        : 'border-gray-300'
+                        ? "border-emerald-600"
+                        : "border-gray-300"
                     }`}
                   >
                     <Ionicons
                       name="lock-closed-outline"
                       size={18}
-                      color={isPasswordFocused ? '#047857' : '#9CA3AF'}
+                      color={isPasswordFocused ? "#047857" : "#9CA3AF"}
                       style={{ marginRight: 8 }}
                     />
                     <TextInput
@@ -258,9 +258,11 @@ const SignIn: React.FC = () => {
                       onFocus={() => setIsPasswordFocused(true)}
                       onBlur={() => setIsPasswordFocused(false)}
                     />
-                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                    <TouchableOpacity
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
                       <Ionicons
-                        name={showPassword ? 'eye-off' : 'eye'}
+                        name={showPassword ? "eye-off" : "eye"}
                         size={20}
                         color="#047857"
                       />
@@ -270,7 +272,7 @@ const SignIn: React.FC = () => {
 
                 <TouchableOpacity
                   onPress={() =>
-                    Alert.alert('Forgot Password', 'Reset link will be sent.')
+                    Alert.alert("Forgot Password", "Reset link will be sent.")
                   }
                   className="self-end mb-5"
                 >
@@ -284,8 +286,8 @@ const SignIn: React.FC = () => {
                   <LinearGradient
                     colors={
                       isLoading
-                        ? ['#aaaaaa', '#aaaaaa']
-                        : ['#166534', '#22c55e']
+                        ? ["#aaaaaa", "#aaaaaa"]
+                        : ["#166534", "#22c55e"]
                     }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
@@ -299,7 +301,7 @@ const SignIn: React.FC = () => {
                       />
                     )}
                     <Text className="text-white font-semibold text-base">
-                      {isLoading ? 'Signing in…' : 'Sign In'}
+                      {isLoading ? "Signing in…" : "Sign In"}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -307,14 +309,12 @@ const SignIn: React.FC = () => {
                 {/* DIVIDER */}
                 <View className="flex-row items-center my-6">
                   <View className="flex-1 h-px bg-gray-200" />
-                  <Text className="mx-3 text-gray-400 text-xs">
-                    New here?
-                  </Text>
+                  <Text className="mx-3 text-gray-400 text-xs">New here?</Text>
                   <View className="flex-1 h-px bg-gray-200" />
                 </View>
 
                 {/* SIGN UP */}
-                <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
                   <View className="py-4 rounded-xl border border-emerald-600 bg-emerald-50/50">
                     <Text className="text-center text-emerald-700 font-semibold">
                       Create New Account
@@ -322,26 +322,13 @@ const SignIn: React.FC = () => {
                   </View>
                 </TouchableOpacity>
 
-                
-
-                    <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-                  <View className="py-4 rounded-xl border border-emerald-600 bg-emerald-50/50">
+                <TouchableOpacity onPress={() => navigation.navigate("Home")}>
+                  <View className="py-4 rounded-xl border border-emerald-600 bg-emerald-50/50 mt-5">
                     <Text className="text-center text-emerald-700 font-semibold">
                       home
                     </Text>
                   </View>
                 </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => navigation.navigate('Disease')}>
-                  <View className="py-4 rounded-xl border border-emerald-600 bg-emerald-50/50">
-                    <Text className="text-center text-emerald-700 font-semibold">
-                      home
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-
-                
               </View>
             </ScrollView>
           </LinearGradient>
