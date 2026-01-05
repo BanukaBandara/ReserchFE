@@ -2,18 +2,123 @@
 
 Mobile app for detecting pineapple diseases using your phone's camera. Built with React Native and Expo.
 
-## What's This About?
+## 📋 Project Overview
 
-We built this app to help farmers spot pineapple diseases early. Just snap a photo of your plant, and the app analyzes it using machine learning to identify potential issues. You can also track multiple plants over time and share observations with the community.
+This mobile application helps farmers and agricultural professionals identify pineapple diseases early through image-based machine learning detection. The app provides:
 
-### Main Features
+- **Disease Detection**: Snap a photo and get instant AI-powered disease identification
+- **Plant Tracking**: Monitor multiple plants and track their health over time
+- **Community Features**: Share observations and learn from other users
+- **Historical Data**: View plant health trends with visual charts
+- **Personalized Recommendations**: Get actionable advice based on detection results
 
-- User login and registration
-- Take photos of pineapples to detect diseases
-- Keep track of your plants and their health history
-- Community feed where users can share posts
-- Get detailed results and recommendations when diseases are detected
-- Personal profile to manage your account
+**Target Users**: Farmers, agricultural students, and farming communities
+
+**Platform**: iOS and Android (via React Native/Expo)
+
+## 🏗️ Architecture Diagram
+
+Here's the basic flow of the app:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Mobile Application                        │
+│                      (React Native + Expo)                       │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │               │               │
+         ▼               ▼               ▼
+    ┌────────┐     ┌─────────┐    ┌──────────┐
+    │ UI/UX  │     │  State  │    │ Services │
+    │ Layer  │     │  Mgmt   │    │  Layer   │
+    └────────┘     └─────────┘    └──────────┘
+         │               │               │
+    ┌────┴───┐     ┌────┴────┐     ┌────┴────┐
+    │ Screens│     │  Redux  │     │   API   │
+    │Components    │  Store  │     │ Service │
+    └────────┘     └─────────┘     └──────────┘
+                         │               │
+                         │               │
+                    ┌────┴───────────────┴────┐
+                    │   Redux Slices           │
+                    ├──────────────────────────┤
+                    │ • authSlice             │
+                    │ • detectionSlice        │
+                    │ • itemsSlice            │
+                    │ • plantSlice            │
+                    └──────────────────────────┘
+                                │
+                                ▼
+                    ┌────────────────────────┐
+                    │    Backend API         │
+                    │  (REST API Endpoints)  │
+                    └────────────────────────┘
+                                │
+                    ┌───────────┴───────────┐
+                    │                       │
+                    ▼                       ▼
+            ┌──────────────┐        ┌─────────────┐
+            │   Database   │        │  ML Model   │
+            │   Server     │        │   Service   │
+            └──────────────┘        └─────────────┘
+```
+
+## 📦 Project Dependencies
+
+### Core Framework
+
+```json
+{
+  "react": "19.1.0",
+  "react-native": "0.81.5",
+  "expo": "~54.0.30"
+}
+```
+
+### Navigation & State Management
+
+- `@react-navigation/native` - App navigation
+- `@react-navigation/stack` - Stack-based navigation
+- `@react-navigation/bottom-tabs` - Bottom tab navigation
+- `@reduxjs/toolkit` - State management
+- `react-redux` - Redux bindings for React
+- `@react-native-async-storage/async-storage` - Local data persistence
+
+### API & Networking
+
+- `axios` - HTTP client for API requests
+
+### Camera & Media
+
+- `expo-camera` - Camera access
+- `expo-image-picker` - Photo gallery access
+- `expo-image` - Optimized image component
+
+### UI & Styling
+
+- `nativewind` - Tailwind CSS for React Native
+- `tailwindcss` - Utility-first CSS framework
+- `expo-linear-gradient` - Gradient components
+
+### Data Visualization
+
+- `react-native-chart-kit` - Chart components
+- `react-native-svg` - SVG support for charts
+
+### Utilities
+
+- `date-fns` - Date formatting and manipulation
+- `expo-haptics` - Haptic feedback
+- `typescript` - Type safety
+- `eslint` - Code linting
+
+### Development Tools
+
+- `@babel/core` - JavaScript compiler
+- `@types/react` - TypeScript types for React
+
+For complete dependency list with versions, see `package.json`.
 
 ## How It Works
 
@@ -82,47 +187,6 @@ Here's the basic flow of the app:
 - Axios handles all API calls to the backend
 - Expo Camera and Image Picker for photos
 - Chart components to visualize plant health trends
-
-## What We're Using
-
-Here's all the tech that makes this work:
-
-### The Basics
-
-- React 19.1.0 - for building the UI
-- React Native 0.81.5 - to make it work on mobile
-- Expo ~54.0.30 - makes development way easier
-
-### Navigation
-
-We're using React Navigation to move around the app - stack navigation for the main flow and bottom tabs for the main sections.
-
-### State & Data
-
-- Redux Toolkit to manage app state
-- AsyncStorage to save stuff locally on your phone
-- Axios for talking to the backend API
-
-### Camera & Media
-
-- Expo Camera to take pictures
-- Image Picker to grab photos from your gallery
-- Optimized image components for better performance
-
-### UI & Styling
-
-We went with Tailwind CSS (through NativeWind) because it's fast to work with and keeps things consistent. Also using gradients and some nice visual touches.
-
-### Charts
-
-Added react-native-chart-kit and SVG support to show plant health trends over time.
-
-### Other Helpful Stuff
-
-- date-fns for handling dates
-- Haptic feedback for better UX
-- TypeScript for type safety (fewer bugs!)
-- ESLint to keep code clean
 
 ## Getting Started
 
