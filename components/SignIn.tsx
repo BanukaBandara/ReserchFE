@@ -174,7 +174,7 @@ const SignIn: React.FC = () => {
                   PINEAPPLE ASSISTANT
                 </Text>
                 <Text className="text-sm text-emerald-50 mt-2">
-                  Smart Pest Detection & Alerts
+                  Smart Detection & Alerts
                 </Text>
               </View>
 
