@@ -13,14 +13,14 @@ import {
   View,
 } from "react-native";
 import { v4 as uuidv4 } from "react-native-uuid";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addPlant,
   deletePlant,
   loadPlants,
   selectPlant,
-} from "../../store/slices/plantSlice";
-import { GrowthStage, HealthStatus, Plant } from "../../types/detection";
+} from "../store/slices/plantSlice";
+import { GrowthStage, HealthStatus, Plant } from "../types/detection";
 
 const { width } = Dimensions.get("window");
 

@@ -1,18 +1,21 @@
-import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { Provider } from 'react-redux';
+import React, { useEffect } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { Provider } from "react-redux";
 
-import { store, useAppDispatch } from '../store/store';
-import { restoreAuthFromStorage } from '../store/slices/authSlice';
+import { store, useAppDispatch } from "../store/store";
+import { restoreAuthFromStorage } from "../store/slices/authSlice";
 
-import Splash from '../components/Splash';
-import SignIn from '../components/SignIn';
-import SignUp from '../components/SignUp';
-import Home from '../components/Home';
-import Profile from '../components/Profile';
-import Disease from '../components/Disease';
-import PestDetection from '@/components/PestDetection';
+import Splash from "../components/Splash";
+import SignIn from "../components/SignIn";
+import SignUp from "../components/SignUp";
+import Home from "../components/Home";
+import Profile from "../components/Profile";
+import Disease from "../components/Disease";
+import PestDetection from "@/components/PestDetection";
+import PineappleDetection from "../components/PineappleDetection";
+import DetectionResults from "@/components/DetectionResults";
+import PlantTracker from "@/components/PlantTracker";
 
 /* ---------- TYPES ---------- */
 export type RootStackParamList = {
@@ -22,6 +25,10 @@ export type RootStackParamList = {
   Home: undefined;
   Profile: undefined;
   Disease: undefined;
+  PestDetection: undefined;
+  PineappleDetection: undefined;
+  DetectionResults: undefined;
+  PlantTracker: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -55,6 +62,12 @@ const AppNavigator: React.FC = () => {
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Disease" component={Disease} />
         <Stack.Screen name="PestDetection" component={PestDetection} />
+        <Stack.Screen
+          name="PineappleDetection"
+          component={PineappleDetection}
+        />
+        <Stack.Screen name="DetectionResults" component={DetectionResults} />
+        <Stack.Screen name="PlantTracker" component={PlantTracker} />
       </Stack.Navigator>
     </NavigationContainer>
   );
