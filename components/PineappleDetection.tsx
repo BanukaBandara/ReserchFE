@@ -16,15 +16,15 @@ import {
   View,
   Animated,
 } from "react-native";
-import { APIError, detectPineappleGrowth } from "../../services/apiService";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import { APIError, detectPineappleGrowth } from "../services/apiService";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addDetection,
   setCurrentDetection,
-} from "../../store/slices/detectionSlice";
-import { addDetectionToPlant } from "../../store/slices/plantSlice";
-import { DetectionResult, GrowthStage } from "../../types/detection";
-import { RootStackParamList } from "../../app/App";
+} from "../store/slices/detectionSlice";
+import { addDetectionToPlant } from "../store/slices/plantSlice";
+import { DetectionResult, GrowthStage } from "../types/detection";
+import { RootStackParamList } from "../app/App";
 
 const { width, height } = Dimensions.get("window");
 

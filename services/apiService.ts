@@ -1,7 +1,7 @@
 import { DetectionResult } from '../types/detection';
 
 // API Configuration
-const API_BASE_URL = 'http://192.168.1.100:5000'; // Change this to your server IP
+const API_BASE_URL = 'http://192.168.8.181:3001'; // Change this to your server IP
 
 export class APIError extends Error {
     constructor(
