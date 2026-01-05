@@ -1,5 +1,12 @@
 import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, Dimensions, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -48,7 +55,13 @@ const FeatureCard = ({
         end={{ x: 1, y: 1 }}
         style={{ padding: 20 }}
       >
-        <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+          }}
+        >
           <View style={{ flex: 1 }}>
             <View
               style={{
@@ -64,10 +77,23 @@ const FeatureCard = ({
               <Ionicons name={icon} size={26} color="#ffffff" />
             </View>
 
-            <Text style={{ fontSize: 20, fontWeight: "700", color: "#ffffff", marginBottom: 6 }}>
+            <Text
+              style={{
+                fontSize: 20,
+                fontWeight: "700",
+                color: "#ffffff",
+                marginBottom: 6,
+              }}
+            >
               {title}
             </Text>
-            <Text style={{ fontSize: 14, color: "rgba(255,255,255,0.9)", lineHeight: 20 }}>
+            <Text
+              style={{
+                fontSize: 14,
+                color: "rgba(255,255,255,0.9)",
+                lineHeight: 20,
+              }}
+            >
               {subtitle}
             </Text>
 
@@ -82,7 +108,11 @@ const FeatureCard = ({
                   alignSelf: "flex-start",
                 }}
               >
-                <Text style={{ fontSize: 12, fontWeight: "600", color: "#ffffff" }}>{stats}</Text>
+                <Text
+                  style={{ fontSize: 12, fontWeight: "600", color: "#ffffff" }}
+                >
+                  {stats}
+                </Text>
               </View>
             )}
           </View>
@@ -144,7 +174,14 @@ const QuickStatCard = ({
       >
         <Ionicons name={icon} size={20} color={color} />
       </View>
-      <Text style={{ fontSize: 22, fontWeight: "700", color: "#111827", marginBottom: 4 }}>
+      <Text
+        style={{
+          fontSize: 22,
+          fontWeight: "700",
+          color: "#111827",
+          marginBottom: 4,
+        }}
+      >
         {value}
       </Text>
       <Text style={{ fontSize: 12, color: "#6b7280" }}>{label}</Text>
@@ -152,9 +189,21 @@ const QuickStatCard = ({
   );
 };
 
-const InfoTip = ({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: string }) => {
+const InfoTip = ({
+  icon,
+  text,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  text: string;
+}) => {
   return (
-    <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 12 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        marginBottom: 12,
+      }}
+    >
       <View
         style={{
           width: 32,
@@ -168,7 +217,9 @@ const InfoTip = ({ icon, text }: { icon: keyof typeof Ionicons.glyphMap; text: s
       >
         <Ionicons name={icon} size={16} color="#0f766e" />
       </View>
-      <Text style={{ flex: 1, fontSize: 14, color: "#374151", lineHeight: 20 }}>{text}</Text>
+      <Text style={{ flex: 1, fontSize: 14, color: "#374151", lineHeight: 20 }}>
+        {text}
+      </Text>
     </View>
   );
 };
@@ -178,34 +229,30 @@ export default function Home() {
   const insets = useSafeAreaInsets();
 
   const handleSignOut = () => {
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: () => {
+          // Navigate to SignIn screen and reset navigation stack
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "SignIn" as any }],
+          });
         },
-        {
-          text: "Sign Out",
-          style: "destructive",
-          onPress: () => {
-            // Navigate to SignIn screen and reset navigation stack
-            navigation.reset({ 
-              index: 0, 
-              routes: [{ name: "SignIn" as any }] 
-            });
-          }
-        }
-      ]
-    );
+      },
+    ]);
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#064e3b" }}>
       <View style={{ flex: 1, paddingTop: insets.top }}>
         <LinearGradient
-          colors={['#064e3b', '#166534', '#facc15']}
+          colors={["#064e3b", "#166534", "#facc15"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ flex: 1 }}
@@ -223,12 +270,32 @@ export default function Home() {
                 paddingHorizontal: 20,
               }}
             >
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 16,
+                }}
+              >
                 <View>
-                  <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: "500" }}>
+                  <Text
+                    style={{
+                      color: "rgba(255,255,255,0.9)",
+                      fontSize: 14,
+                      fontWeight: "500",
+                    }}
+                  >
                     Welcome Back 👋
                   </Text>
-                  <Text style={{ color: "#ffffff", fontSize: 28, fontWeight: "800", marginTop: 4 }}>
+                  <Text
+                    style={{
+                      color: "#ffffff",
+                      fontSize: 28,
+                      fontWeight: "800",
+                      marginTop: 4,
+                    }}
+                  >
                     Pineapple Care
                   </Text>
                 </View>
@@ -245,7 +312,11 @@ export default function Home() {
                       justifyContent: "center",
                     }}
                   >
-                    <Ionicons name="notifications-outline" size={22} color="#ffffff" />
+                    <Ionicons
+                      name="notifications-outline"
+                      size={22}
+                      color="#ffffff"
+                    />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -260,120 +331,174 @@ export default function Home() {
                       justifyContent: "center",
                     }}
                   >
-                    <Ionicons name="log-out-outline" size={22} color="#ffffff" />
+                    <Ionicons
+                      name="log-out-outline"
+                      size={22}
+                      color="#ffffff"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <Text style={{ color: "rgba(255,255,255,0.95)", fontSize: 15, lineHeight: 22 }}>
-                AI-powered detection and monitoring system for healthy pineapple cultivation
+              <Text
+                style={{
+                  color: "rgba(255,255,255,0.95)",
+                  fontSize: 15,
+                  lineHeight: 22,
+                }}
+              >
+                AI-powered detection and monitoring system for healthy pineapple
+                cultivation
               </Text>
             </View>
 
-        {/* Quick Stats */}
-        <View style={{ paddingHorizontal: 14, marginTop: -30 }}>
-          <View style={{ flexDirection: "row", marginBottom: 20 }}>
-            <QuickStatCard icon="shield-checkmark" label="Scans Today" value="24" color="#059669" />
-            <QuickStatCard icon="alert-circle" label="Alerts" value="3" color="#dc2626" />
-            <QuickStatCard icon="leaf" label="Plants" value="156" color="#0284c7" />
-          </View>
-        </View>
+            {/* Quick Stats */}
+            <View style={{ paddingHorizontal: 14, marginTop: -30 }}>
+              <View style={{ flexDirection: "row", marginBottom: 20 }}>
+                <QuickStatCard
+                  icon="shield-checkmark"
+                  label="Scans Today"
+                  value="24"
+                  color="#059669"
+                />
+                <QuickStatCard
+                  icon="alert-circle"
+                  label="Alerts"
+                  value="3"
+                  color="#dc2626"
+                />
+                <QuickStatCard
+                  icon="leaf"
+                  label="Plants"
+                  value="156"
+                  color="#0284c7"
+                />
+              </View>
+            </View>
 
-        {/* Main Features */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: "700", color: "#ffffff" }}>
-              Main Features
-            </Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: "#fef3c7" }}>
-                View All
-              </Text>
-            </TouchableOpacity>
-          </View>
+            {/* Main Features */}
+            <View style={{ paddingHorizontal: 20 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 16,
+                }}
+              >
+                <Text
+                  style={{ fontSize: 20, fontWeight: "700", color: "#ffffff" }}
+                >
+                  Main Features
+                </Text>
+                <TouchableOpacity activeOpacity={0.7}>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: "#fef3c7",
+                    }}
+                  >
+                    View All
+                  </Text>
+                </TouchableOpacity>
+              </View>
 
-          <FeatureCard
-            title="Pest Detection"
-            subtitle="Identify and diagnose pest infestations using advanced AI image recognition"
-            icon="bug"
-            gradient={["#dc2626", "#ef4444"]}
-            stats="95% Accuracy"
-            onPress={() => navigation.navigate("PestDetection")}
-          />
+              <FeatureCard
+                title="Pest Detection"
+                subtitle="Identify and diagnose pest infestations using advanced AI image recognition"
+                icon="bug"
+                gradient={["#dc2626", "#ef4444"]}
+                stats="95% Accuracy"
+                onPress={() => navigation.navigate("PestDetection")}
+              />
 
-          <FeatureCard
-            title="Disease Detection"
-            subtitle="Detect leaf and fruit diseases early with instant analysis and treatment plans"
-            icon="medical"
-            gradient={["#7c3aed", "#9333ea"]}
-            stats="Smart Analysis"
-            onPress={() => navigation.navigate("Disease")}
-          />
+              <FeatureCard
+                title="Disease Detection"
+                subtitle="Detect leaf and fruit diseases early with instant analysis and treatment plans"
+                icon="medical"
+                gradient={["#7c3aed", "#9333ea"]}
+                stats="Smart Analysis"
+                onPress={() => navigation.navigate("Disease")}
+              />
 
-          <FeatureCard
-            title="Growth Tracking"
-            subtitle="Monitor plant development stages with timeline tracking and growth insights"
-            icon="analytics"
-            gradient={["#0284c7", "#0ea5e9"]}
-            stats="Real-time Updates"
-            onPress={() => navigation.navigate("Growth")}
-          />
+              <FeatureCard
+                title="Growth Tracking"
+                subtitle="Monitor plant development stages with timeline tracking and growth insights"
+                icon="analytics"
+                gradient={["#0284c7", "#0ea5e9"]}
+                stats="Real-time Updates"
+                onPress={() => navigation.navigate("PineappleDetection")}
+              />
 
-          <FeatureCard
-            title="Weather & Care Tips"
-            subtitle="Get personalized care recommendations based on local weather conditions"
-            icon="partly-sunny"
-            gradient={["#f59e0b", "#fbbf24"]}
-            stats="Daily Updates"
-            onPress={() => navigation.navigate("Weather")}
-          />
-        </View>
+              <FeatureCard
+                title="Weather & Care Tips"
+                subtitle="Get personalized care recommendations based on local weather conditions"
+                icon="partly-sunny"
+                gradient={["#f59e0b", "#fbbf24"]}
+                stats="Daily Updates"
+                onPress={() => navigation.navigate("Weather")}
+              />
+            </View>
 
-        {/* Tips Section */}
-        <View
-          style={{
-            marginHorizontal: 20,
-            marginTop: 8,
-            backgroundColor: "rgba(255,255,255,0.95)",
-            borderRadius: 20,
-            padding: 20,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.15,
-            shadowRadius: 12,
-            elevation: 12,
-          }}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
-            <Ionicons name="bulb" size={22} color="#fbbf24" />
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#064e3b", marginLeft: 8 }}>
-              Pro Tips
-            </Text>
-          </View>
+            {/* Tips Section */}
+            <View
+              style={{
+                marginHorizontal: 20,
+                marginTop: 8,
+                backgroundColor: "rgba(255,255,255,0.95)",
+                borderRadius: 20,
+                padding: 20,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+                elevation: 12,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Ionicons name="bulb" size={22} color="#fbbf24" />
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: "#064e3b",
+                    marginLeft: 8,
+                  }}
+                >
+                  Pro Tips
+                </Text>
+              </View>
 
-          <InfoTip
-            icon="camera"
-            text="Use clear, well-lit photos for accurate detection results"
-          />
-          <InfoTip
-            icon="time"
-            text="Scan your plants early morning for best photo quality"
-          />
-          <InfoTip
-            icon="water"
-            text="Regular monitoring helps catch issues before they spread"
-          />
-          <InfoTip
-            icon="checkmark-circle"
-            text="Follow recommended actions immediately for best recovery"
-          />
-        </View>
+              <InfoTip
+                icon="camera"
+                text="Use clear, well-lit photos for accurate detection results"
+              />
+              <InfoTip
+                icon="time"
+                text="Scan your plants early morning for best photo quality"
+              />
+              <InfoTip
+                icon="water"
+                text="Regular monitoring helps catch issues before they spread"
+              />
+              <InfoTip
+                icon="checkmark-circle"
+                text="Follow recommended actions immediately for best recovery"
+              />
+            </View>
 
-        {/* Bottom Spacing */}
-        <View style={{ height: 20 }} />
-      </ScrollView>
-    </LinearGradient>
-    </View>
+            {/* Bottom Spacing */}
+            <View style={{ height: 20 }} />
+          </ScrollView>
+        </LinearGradient>
+      </View>
 
       {/* Bottom Navigation */}
       <View
@@ -393,7 +518,13 @@ export default function Home() {
           elevation: 10,
         }}
       >
-        <View style={{ flexDirection: "row", paddingHorizontal: 12, paddingVertical: 10 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+          }}
+        >
           <TouchableOpacity
             activeOpacity={0.8}
             style={{ flex: 1, alignItems: "center", paddingHorizontal: 4 }}
@@ -412,7 +543,9 @@ export default function Home() {
             >
               <Ionicons name="home" size={22} color="#ffffff" />
             </View>
-            <Text style={{ fontSize: 10, fontWeight: "600", color: "#059669" }}>Home</Text>
+            <Text style={{ fontSize: 10, fontWeight: "600", color: "#059669" }}>
+              Home
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -433,7 +566,9 @@ export default function Home() {
             >
               <Ionicons name="bug-outline" size={22} color="#6b7280" />
             </View>
-            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>Pest</Text>
+            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>
+              Pest
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -454,13 +589,15 @@ export default function Home() {
             >
               <Ionicons name="medical-outline" size={22} color="#6b7280" />
             </View>
-            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>Disease</Text>
+            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>
+              Disease
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.8}
             style={{ flex: 1, alignItems: "center", paddingHorizontal: 4 }}
-            onPress={() => navigation.navigate("Growth")}
+            onPress={() => navigation.navigate("PineappleDetection")}
           >
             <View
               style={{
@@ -475,7 +612,9 @@ export default function Home() {
             >
               <Ionicons name="trending-up-outline" size={22} color="#6b7280" />
             </View>
-            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>Growth</Text>
+            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>
+              Growth
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -496,7 +635,9 @@ export default function Home() {
             >
               <Ionicons name="person-outline" size={22} color="#6b7280" />
             </View>
-            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>Profile</Text>
+            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>
+              Profile
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

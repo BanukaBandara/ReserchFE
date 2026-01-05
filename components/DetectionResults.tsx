@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { generateVoiceAlert } from "../../services/apiService";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import { HealthStatus, HealthIssue } from "../../types/detection";
+import { generateVoiceAlert } from "../services/apiService";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { HealthStatus, HealthIssue } from "../types/detection";
 
 const { width } = Dimensions.get("window");
 

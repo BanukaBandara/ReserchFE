@@ -5,13 +5,14 @@ import { Ionicons } from "@expo/vector-icons";
 import Home from "./Home";
 import PestDetection from "./PestDetection";
 import DiseaseDetection from "./Disease";
+import PineappleDetection from "./PineappleDetection";
 //import Growth from "./Growth";
 
 export type MainTabParamList = {
   Home: undefined;
   PestDetection: undefined;
   DiseaseDetection: undefined;
-  Growth: undefined;
+  PineappleDetection: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -30,16 +31,29 @@ export default function BottomNavigation() {
           if (route.name === "Home") iconName = "home-outline";
           if (route.name === "PestDetection") iconName = "bug-outline";
           if (route.name === "Disease") iconName = "leaf-outline";
-         // if (route.name === "Growth") iconName = "trending-up-outline";
+          if (route.name === "PineappleDetection")
+            iconName = "trending-up-outline";
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
       <Tab.Screen name="Home" component={Home} options={{ title: "Home" }} />
-      <Tab.Screen name="PestDetection" component={PestDetection} options={{ title: "Pest Detection" }} />
-      <Tab.Screen name="DiseaseDetection" component={DiseaseDetection} options={{ title: "Disease Detection" }} />
-      <Tab.Screen name="Growth" component={Growth} options={{ title: "Plant Growth" }} />
+      <Tab.Screen
+        name="PestDetection"
+        component={PestDetection}
+        options={{ title: "Pest Detection" }}
+      />
+      <Tab.Screen
+        name="DiseaseDetection"
+        component={DiseaseDetection}
+        options={{ title: "Disease Detection" }}
+      />
+      <Tab.Screen
+        name="Growth"
+        component={PineappleDetection}
+        options={{ title: "Plant Growth" }}
+      />
     </Tab.Navigator>
   );
 }
