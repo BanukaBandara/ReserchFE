@@ -1,195 +1,165 @@
-import { DetectionResult } from '../types/detection';
+import { DetectionResult } from "../types/detection";
 
 // API Configuration
-const API_BASE_URL = 'http://192.168.8.181:3001'; // Change this to your server IP
+const API_BASE_URL = "http://192.168.8.181:3001"; // your PC IP
 
 export class APIError extends Error {
-    constructor(
-        public message: string,
-        public statusCode?: number
-    ) {
-        super(message);
-        this.name = 'APIError';
-    }
+  constructor(public message: string, public statusCode?: number) {
+    super(message);
+    this.name = "APIError";
+  }
 }
 
-/**
- * Test connection to the backend server
- */
-// export const testConnection = async (): Promise<boolean> => {
-//     try {
-//         const response = await fetch(`${API_BASE_URL}/api/health`, {
-//             method: 'GET',
-//             timeout: 5000,
-//         } as any);
-//         return response.ok;
-//     } catch (error) {
-//         console.error('Connection test failed:', error);
-//         return false;
-//     }
-// };
+// Helper: safely parse JSON (even when server returns HTML/text)
+const safeJson = async (response: Response) => {
+  const text = await response.text();
+  try {
+    return { ok: true, data: JSON.parse(text) };
+  } catch {
+    return { ok: false, data: text };
+  }
+};
 
 /**
- * Detect pineapple growth from an image
+ * Detect pineapple pest from an image (Model prediction)
+ * Backend endpoint should be: POST /api/predict
  */
-export const detectPineappleGrowth = async (
-    imageUri: string,
-    metadata?: {
-        daysFromPlanting?: number;
-        location?: string;
-    }
+export const detectPestFromImage = async (
+  imageUri: string,
+  metadata?: {
+    daysFromPlanting?: number;
+    location?: string;
+  }
 ): Promise<any> => {
-    try {
-        // Create FormData for file upload
-        const formData = new FormData();
+  try {
+    const formData = new FormData();
 
-        // Append image
-        const filename = imageUri.split('/').pop() || 'photo.jpg';
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
+    const filename = imageUri.split("/").pop() || "photo.jpg";
+    const extMatch = /\.(\w+)$/.exec(filename);
+    const mimeType = extMatch ? `image/${extMatch[1]}` : "image/jpeg";
 
-        formData.append('image', {
-            uri: imageUri,
-            name: filename,
-            type,
-        } as any);
+    formData.append("image", {
+      uri: imageUri,
+      name: filename,
+      type: mimeType,
+    } as any);
 
-        // Append metadata if provided
-        if (metadata?.daysFromPlanting) {
-            formData.append('days_from_planting', metadata.daysFromPlanting.toString());
-        }
-        if (metadata?.location) {
-            formData.append('location', metadata.location);
-        }
-
-        const response = await fetch(`${API_BASE_URL}/api/detect`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Accept': 'application/json',
-            },
-        });
-
-        if (!response.ok) {
-            throw new APIError(
-                `Server returned ${response.status}: ${response.statusText}`,
-                response.status
-            );
-        }
-
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        if (error instanceof APIError) {
-            throw error;
-        }
-        throw new APIError(
-            error instanceof Error ? error.message : 'Failed to analyze image'
-        );
+    // metadata (keep 0 as valid)
+    if (metadata?.daysFromPlanting !== undefined) {
+      formData.append("days_from_planting", String(metadata.daysFromPlanting));
     }
+    if (metadata?.location) {
+      formData.append("location", metadata.location);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/predict`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        Accept: "application/json",
+        // IMPORTANT: do NOT set Content-Type for FormData in React Native
+      },
+    });
+
+    const parsed = await safeJson(response);
+
+    if (!response.ok) {
+      const msg =
+        parsed.ok && parsed.data?.error
+          ? parsed.data.error
+          : `Server returned ${response.status}: ${response.statusText}`;
+      throw new APIError(msg, response.status);
+    }
+
+    return parsed.ok ? parsed.data : parsed.data;
+  } catch (error) {
+    if (error instanceof APIError) throw error;
+    throw new APIError(error instanceof Error ? error.message : "Failed to analyze image");
+  }
 };
 
 /**
  * Generate voice alert for detection results
  */
 export const generateVoiceAlert = async (
-    detectionId: string,
-    language: string = 'en'
+  detectionId: string,
+  language: string = "en"
 ): Promise<{ message_text: string; audio_url?: string }> => {
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}/api/voice-alert/${detectionId}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ language }),
-            }
-        );
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/voice-alert/${detectionId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ language }),
+    });
 
-        if (!response.ok) {
-            throw new APIError(
-                `Failed to generate voice alert: ${response.statusText}`,
-                response.status
-            );
-        }
+    const parsed = await safeJson(response);
 
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        if (error instanceof APIError) {
-            throw error;
-        }
-        throw new APIError(
-            error instanceof Error ? error.message : 'Failed to generate voice alert'
-        );
+    if (!response.ok) {
+      const msg =
+        parsed.ok && parsed.data?.error
+          ? parsed.data.error
+          : `Failed to generate voice alert: ${response.statusText}`;
+      throw new APIError(msg, response.status);
     }
+
+    return parsed.ok ? parsed.data : parsed.data;
+  } catch (error) {
+    if (error instanceof APIError) throw error;
+    throw new APIError(error instanceof Error ? error.message : "Failed to generate voice alert");
+  }
 };
 
 /**
  * Get detection history for a plant
  */
-export const getDetectionHistory = async (
-    plantId: string
-): Promise<DetectionResult[]> => {
-    try {
-        const response = await fetch(
-            `${API_BASE_URL}/api/plants/${plantId}/detections`,
-            {
-                method: 'GET',
-            }
-        );
+export const getDetectionHistory = async (plantId: string): Promise<DetectionResult[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/plants/${plantId}/detections`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
 
-        if (!response.ok) {
-            throw new APIError(
-                `Failed to fetch detection history: ${response.statusText}`,
-                response.status
-            );
-        }
+    const parsed = await safeJson(response);
 
-        const data = await response.json();
-        return data.detections || [];
-    } catch (error) {
-        if (error instanceof APIError) {
-            throw error;
-        }
-        throw new APIError(
-            error instanceof Error ? error.message : 'Failed to fetch detection history'
-        );
+    if (!response.ok) {
+      const msg =
+        parsed.ok && parsed.data?.error
+          ? parsed.data.error
+          : `Failed to fetch detection history: ${response.statusText}`;
+      throw new APIError(msg, response.status);
     }
+
+    return parsed.ok ? parsed.data.detections || [] : [];
+  } catch (error) {
+    if (error instanceof APIError) throw error;
+    throw new APIError(error instanceof Error ? error.message : "Failed to fetch detection history");
+  }
 };
 
 /**
  * Save detection to backend
  */
-export const saveDetection = async (
-    detection: DetectionResult
-): Promise<DetectionResult> => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/detections`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(detection),
-        });
+export const saveDetection = async (detection: DetectionResult): Promise<DetectionResult> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/detections`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(detection),
+    });
 
-        if (!response.ok) {
-            throw new APIError(
-                `Failed to save detection: ${response.statusText}`,
-                response.status
-            );
-        }
+    const parsed = await safeJson(response);
 
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        if (error instanceof APIError) {
-            throw error;
-        }
-        throw new APIError(
-            error instanceof Error ? error.message : 'Failed to save detection'
-        );
+    if (!response.ok) {
+      const msg =
+        parsed.ok && parsed.data?.error
+          ? parsed.data.error
+          : `Failed to save detection: ${response.statusText}`;
+      throw new APIError(msg, response.status);
     }
+
+    return parsed.ok ? parsed.data : parsed.data;
+  } catch (error) {
+    if (error instanceof APIError) throw error;
+    throw new APIError(error instanceof Error ? error.message : "Failed to save detection");
+  }
 };

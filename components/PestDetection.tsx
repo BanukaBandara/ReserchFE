@@ -18,26 +18,71 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 
+// ✅ ADD THIS (Voice + Alarm)
+import { speakByRisk, stopAlarm } from "../utils/alerts";
+
 type PredictionResponse = {
   label: string;
-  confidence: number;
+  confidence: number; // can be 0-1 OR 0-100 from server, we normalize
 };
 
 type HistoryItem = {
   id: string;
   imageUri: string;
   pest: string;
-  confidence: number;
+  confidence: number; // stored as 0-1
   timestamp: Date;
   risk: "Low" | "Medium" | "High";
 };
 
-const API_URL = "http://192.168.8.181:8000/predict";
+// ✅ USING NODE BACKEND (Express) => POST http://<IP>:3001/api/predict
+// Backend multer should be: upload.single("image")  => FormData key must be "image"
+const API_URL = "http://192.168.8.181:3001/api/predict";
+
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+const normalizeConfidence = (c: number) => {
+  if (typeof c !== "number" || Number.isNaN(c)) return 0;
+  return c > 1 ? c / 100 : c;
+};
+
+const riskFromLabel = (label: string): "Low" | "Medium" | "High" => {
+  const l = (label || "").toLowerCase();
+  if (l === "mealybug") return "High";
+  if (l === "thrips") return "Medium";
+  return "Low";
+};
+
+const getRiskColor = (risk: "Low" | "Medium" | "High") => {
+  switch (risk) {
+    case "High":
+      return {
+        bg: "#fee2e2",
+        border: "#fca5a5",
+        text: "#991b1b",
+        badge: "#dc2626",
+      };
+    case "Medium":
+      return {
+        bg: "#fef3c7",
+        border: "#fcd34d",
+        text: "#92400e",
+        badge: "#f59e0b",
+      };
+    default:
+      return {
+        bg: "#d1fae5",
+        border: "#6ee7b7",
+        text: "#065f46",
+        badge: "#10b981",
+      };
+  }
+};
 
 const PestDetection: React.FC = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
@@ -51,8 +96,7 @@ const PestDetection: React.FC = () => {
 
   const confidencePct = useMemo(() => {
     if (!result) return null;
-    const c = result.confidence > 1 ? result.confidence / 100 : result.confidence;
-    return Math.max(0, Math.min(1, c)) * 100;
+    return Math.max(0, Math.min(1, result.confidence)) * 100;
   }, [result]);
 
   const pestInfo = useMemo(() => {
@@ -76,79 +120,77 @@ const PestDetection: React.FC = () => {
         title: "Mealybug",
         scientificName: "Dysmicoccus brevipes",
         description:
-          "Mealybugs are sap-sucking insects that weaken pineapple plants and can spread diseases. They often appear as white cottony clusters and are vectors of pineapple mealybug wilt-associated virus (PMWaV).",
+          "Mealybugs are sap-sucking insects that weaken pineapple plants and can spread diseases. They often appear as white cottony clusters and can be associated with mealybug wilt problems.",
         symptoms: [
           "White cotton-like insects at leaf bases or joints",
           "Leaf yellowing and stunted growth",
-          "Sticky honeydew secretion and black sooty mold",
+          "Sticky honeydew and black sooty mold",
           "Increased ant activity near plants",
-          "Wilting of leaves despite adequate water",
+          "Wilting despite adequate water",
           "Reduced fruit size and quality",
         ],
         risk: "High",
         actions: [
-          "Immediately isolate affected plants to prevent spread",
-          "Remove heavily infested plant parts and destroy them",
-          "Control ant populations (they protect mealybugs)",
-          "Apply targeted insecticides during early infestation",
+          "Isolate affected plants to prevent spread",
+          "Remove heavily infested parts and destroy them",
+          "Control ants (they protect mealybugs)",
+          "Apply targeted treatments early in infestation",
         ],
         prevention: [
-          "Use certified disease-free planting material",
-          "Maintain proper field sanitation",
-          "Ensure adequate plant spacing (30-45cm) for airflow",
-          "Regular monitoring and early detection",
-          "Remove weeds that harbor mealybugs",
+          "Use clean planting material",
+          "Maintain field sanitation",
+          "Keep good spacing for airflow",
+          "Monitor regularly for early detection",
+          "Remove weeds that harbor pests",
         ],
         biologicalControl: [
-          "Release parasitoid wasps (Anagyrus loecki, Acerophagus papayae)",
-          "Encourage natural predators like ladybugs and lacewings",
-          "Use entomopathogenic fungi (Beauveria bassiana)",
+          "Encourage predators like ladybugs and lacewings",
+          "Use biocontrol options where available (e.g., beneficial insects/fungi)",
+          "Use neem-based products for light infestation (if suitable)",
         ],
         chemicalControl: [
-          "Systemic insecticides: Imidacloprid (soil drench)",
-          "Contact sprays: Diazinon or Malathion",
-          "Insecticidal soap for light infestations",
-          "Rotate pesticides to prevent resistance",
+          "Use recommended insecticides from local agriculture guidance",
+          "Target leaf bases/hidden areas where mealybugs cluster",
+          "Rotate products to reduce resistance risk",
+          "Follow label + safety rules strictly",
         ],
       },
       thrips: {
         title: "Thrips",
-        scientificName: "Thrips tabaci, Frankliniella occidentalis",
+        scientificName: "Thrips tabaci / Frankliniella spp.",
         description:
-          "Thrips are tiny (1-2mm) insects that damage plant tissues by rasping and sucking. They can cause silvery patches, leaf distortion, and transmit viral diseases to pineapple plants.",
+          "Thrips are tiny insects that rasp and suck plant tissue, causing silvery patches, distortion, and scarring. Severe cases reduce photosynthesis and plant vigor.",
         symptoms: [
-          "Silvering or bronzing appearance on leaves",
-          "Tiny black fecal spots on leaves",
-          "Distorted or curled young leaves",
-          "Scarring on fruits and plant surfaces",
-          "Reduced photosynthesis capacity",
-          "Premature leaf drop in severe cases",
+          "Silvering/bronzing on leaves",
+          "Tiny black fecal spots",
+          "Distorted young leaves",
+          "Scarring on fruit/plant surfaces",
+          "Reduced photosynthesis",
+          "Leaf drop in severe cases",
         ],
         risk: "Medium",
         actions: [
-          "Take additional close-up photos for confirmation",
-          "Install blue or yellow sticky traps for monitoring",
-          "Reduce water stress through proper irrigation",
-          "Apply appropriate insecticides if threshold exceeded",
+          "Take close-up photos for confirmation",
+          "Use sticky traps for monitoring",
+          "Reduce plant stress with proper irrigation",
+          "Treat only if infestation threshold is high",
         ],
         prevention: [
-          "Maintain optimal plant nutrition (NPK balance)",
-          "Avoid water stress conditions",
-          "Remove alternative host plants and weeds",
-          "Use reflective mulches to repel thrips",
-          "Screen nursery structures with fine mesh",
+          "Keep balanced nutrition",
+          "Avoid water stress",
+          "Remove weeds/alternate hosts",
+          "Use reflective mulch where suitable",
+          "Keep nursery areas protected",
         ],
         biologicalControl: [
-          "Release predatory mites (Neoseiulus cucumeris)",
-          "Use minute pirate bugs (Orius insidiosus)",
-          "Apply neem oil or spinosad-based products",
-          "Encourage beneficial insects with flowering plants",
+          "Encourage beneficial insects",
+          "Use neem/spinosad-based options where appropriate",
+          "Avoid broad-spectrum products that kill beneficials",
         ],
         chemicalControl: [
-          "Spinosad-based insecticides (organic option)",
-          "Systemic neonicotinoids for severe outbreaks",
-          "Abamectin for thrips control",
-          "Avoid broad-spectrum insecticides (harm beneficials)",
+          "Use recommended thrips products from local guidance",
+          "Apply at correct timing and coverage",
+          "Rotate actives to avoid resistance",
         ],
       },
     };
@@ -158,13 +200,13 @@ const PestDetection: React.FC = () => {
         title: result?.label || "Unknown",
         scientificName: "Classification pending",
         description:
-          "This pest classification requires further analysis. Please capture a clearer image in good lighting conditions or consult with a local agricultural expert.",
-        symptoms: ["Capture a clearer close-up image in good natural light"],
+          "This classification needs a clearer image. Try taking a close-up photo in good natural light, focusing on the affected area.",
+        symptoms: ["Retake a clearer close-up image in good light"],
         risk: "Low" as const,
         actions: [
           "Retake photo with better lighting",
-          "Focus on affected plant area",
-          "Consult local agricultural extension office",
+          "Focus on affected area",
+          "Consult local agriculture support if needed",
         ],
         prevention: ["Regular monitoring", "Good field hygiene"],
         biologicalControl: ["Encourage natural predators"],
@@ -193,21 +235,35 @@ const PestDetection: React.FC = () => {
       fadeAnim.setValue(0);
       scaleAnim.setValue(0.9);
     }
-  }, [result]);
+  }, [result, fadeAnim, scaleAnim]);
+
+  // ✅ Stop alarm when leaving this screen (important)
+  React.useEffect(() => {
+    return () => {
+      stopAlarm();
+    };
+  }, []);
 
   const requestCameraPermission = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Required", "Camera permission is needed to take photos.");
+      Alert.alert(
+        "Permission Required",
+        "Camera permission is needed to take photos."
+      );
       return false;
     }
     return true;
   };
 
   const requestGalleryPermission = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission Required", "Gallery permission is needed to select photos.");
+      Alert.alert(
+        "Permission Required",
+        "Gallery permission is needed to select photos."
+      );
       return false;
     }
     return true;
@@ -230,7 +286,9 @@ const PestDetection: React.FC = () => {
 
     setImageUri(uri);
     setResult(null);
+    setProcessingTime(null);
     setShowImageOptions(false);
+    stopAlarm(); // ✅ stop any alarm
   };
 
   const captureFromCamera = async () => {
@@ -249,7 +307,9 @@ const PestDetection: React.FC = () => {
 
     setImageUri(uri);
     setResult(null);
+    setProcessingTime(null);
     setShowImageOptions(false);
+    stopAlarm(); // ✅ stop any alarm
   };
 
   const predict = async () => {
@@ -266,46 +326,64 @@ const PestDetection: React.FC = () => {
       const filename = imageUri.split("/").pop() || "photo.jpg";
       const ext = filename.split(".").pop()?.toLowerCase();
       const mime =
-        ext === "png" ? "image/png" :
-        ext === "jpg" || ext === "jpeg" ? "image/jpeg" :
-        "image/jpeg";
+        ext === "png"
+          ? "image/png"
+          : ext === "jpg" || ext === "jpeg"
+          ? "image/jpeg"
+          : "image/jpeg";
 
-      formData.append("file", {
-        uri: imageUri,
-        name: filename,
-        type: mime,
-      } as any);
+      // ✅ KEY MUST BE "image" for Node multer: upload.single("image")
+      formData.append(
+        "image",
+        {
+          uri: imageUri,
+          name: filename,
+          type: mime,
+        } as any
+      );
 
       const res = await fetch(API_URL, {
         method: "POST",
         body: formData,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          Accept: "application/json",
+          // ❌ DO NOT set Content-Type for FormData in React Native (boundary issue)
+        },
       });
 
+      const text = await res.text();
       if (!res.ok) {
-        const text = await res.text();
         throw new Error(`Server error (${res.status}): ${text}`);
       }
 
-      const data = (await res.json()) as PredictionResponse;
-      if (data.confidence > 1) data.confidence = data.confidence / 100;
+      const dataRaw = JSON.parse(text) as PredictionResponse;
+      const normalized: PredictionResponse = {
+        ...dataRaw,
+        confidence: normalizeConfidence(dataRaw.confidence),
+      };
 
       const endTime = Date.now();
       setProcessingTime(endTime - startTime);
-      setResult(data);
+      setResult(normalized);
 
-      // Add to history
-      const newHistoryItem: HistoryItem = {
-        id: Date.now().toString(),
-        imageUri,
-        pest: data.label,
-        confidence: data.confidence,
-        timestamp: new Date(),
-        risk: pestInfo.risk,
-      };
-      setHistory((prev) => [newHistoryItem, ...prev.slice(0, 9)]);
+      // ✅ Voice + Alarm (risk based)
+      const pct = normalized.confidence * 100;
+      await speakByRisk(normalized.label, pct);
+
+      setHistory((prev) => [
+        {
+          id: Date.now().toString(),
+          imageUri,
+          pest: normalized.label,
+          confidence: normalized.confidence,
+          timestamp: new Date(),
+          risk: riskFromLabel(normalized.label),
+        },
+        ...prev.slice(0, 9),
+      ]);
     } catch (err: any) {
       Alert.alert("Prediction Failed", err?.message || "Network/Server error.");
+      stopAlarm();
     } finally {
       setIsLoading(false);
     }
@@ -320,36 +398,31 @@ const PestDetection: React.FC = () => {
       `Scientific Name: ${pestInfo.scientificName}\n` +
       `Confidence Level: ${confidencePct?.toFixed(1)}%\n` +
       `Risk Assessment: ${pestInfo.risk}\n` +
-      `Detection Time: ${processingTime}ms\n\n` +
-      `📋 Symptoms:\n${pestInfo.symptoms.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n` +
-      `✅ Immediate Actions:\n${pestInfo.actions.map((a, i) => `${i + 1}. ${a}`).join("\n")}\n\n` +
-      `🛡️ Prevention:\n${pestInfo.prevention.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\n` +
+      `Detection Time: ${processingTime ?? "—"}ms\n\n` +
+      `📋 Symptoms:\n${pestInfo.symptoms
+        .map((s, i) => `${i + 1}. ${s}`)
+        .join("\n")}\n\n` +
+      `✅ Immediate Actions:\n${pestInfo.actions
+        .map((a, i) => `${i + 1}. ${a}`)
+        .join("\n")}\n\n` +
+      `🛡️ Prevention:\n${pestInfo.prevention
+        .map((p, i) => `${i + 1}. ${p}`)
+        .join("\n")}\n\n` +
       `Generated by Pineapple Pest Detection AI`;
 
     await Share.share({ message: msg });
   };
 
   const handleSignOut = () => {
-    Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign Out",
-          style: "destructive",
-          onPress: () => navigation.reset({ index: 0, routes: [{ name: "SignIn" }] }),
-        },
-      ]
-    );
-  };
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case "High": return { bg: "#fee2e2", border: "#fca5a5", text: "#991b1b", badge: "#dc2626" };
-      case "Medium": return { bg: "#fef3c7", border: "#fcd34d", text: "#92400e", badge: "#f59e0b" };
-      default: return { bg: "#d1fae5", border: "#6ee7b7", text: "#065f46", badge: "#10b981" };
-    }
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: () =>
+          navigation.reset({ index: 0, routes: [{ name: "SignIn" }] }),
+      },
+    ]);
   };
 
   const riskColors = getRiskColor(pestInfo.risk);
@@ -364,25 +437,58 @@ const PestDetection: React.FC = () => {
           style={{ flex: 1 }}
         >
           {/* Professional Header */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 18 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View
+            style={{
+              paddingHorizontal: 20,
+              paddingTop: 20,
+              paddingBottom: 18,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               <View style={{ flex: 1, marginRight: 12 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <View style={{ 
-                    backgroundColor: "rgba(255,255,255,0.25)", 
-                    borderRadius: 12, 
-                    width: 48, 
-                    height: 48, 
-                    alignItems: "center", 
-                    justifyContent: "center" 
-                  }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "rgba(255,255,255,0.25)",
+                      borderRadius: 12,
+                      width: 48,
+                      height: 48,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Ionicons name="bug" size={26} color="#ffffff" />
                   </View>
                   <View>
-                    <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: "500" }}>
+                    <Text
+                      style={{
+                        color: "rgba(255,255,255,0.9)",
+                        fontSize: 13,
+                        fontWeight: "500",
+                      }}
+                    >
                       AI-Powered Detection
                     </Text>
-                    <Text style={{ color: "#fff", fontSize: 24, fontWeight: "800", marginTop: 2 }}>
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontSize: 24,
+                        fontWeight: "800",
+                        marginTop: 2,
+                      }}
+                    >
                       Pest Analyzer
                     </Text>
                   </View>
@@ -404,18 +510,26 @@ const PestDetection: React.FC = () => {
                 >
                   <Ionicons name="time-outline" size={22} color="#ffffff" />
                   {history.length > 0 && (
-                    <View style={{
-                      position: "absolute",
-                      top: 4,
-                      right: 4,
-                      backgroundColor: "#ef4444",
-                      borderRadius: 8,
-                      width: 16,
-                      height: 16,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}>
-                      <Text style={{ color: "#fff", fontSize: 10, fontWeight: "700" }}>
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        backgroundColor: "#ef4444",
+                        borderRadius: 8,
+                        width: 16,
+                        height: 16,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#fff",
+                          fontSize: 10,
+                          fontWeight: "700",
+                        }}
+                      >
                         {history.length}
                       </Text>
                     </View>
@@ -439,8 +553,16 @@ const PestDetection: React.FC = () => {
               </View>
             </View>
 
-            <Text style={{ color: "rgba(255,255,255,0.95)", fontSize: 15, lineHeight: 22, marginTop: 12 }}>
-              Upload a clear, well-lit image for accurate pest identification and instant treatment recommendations.
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.95)",
+                fontSize: 15,
+                lineHeight: 22,
+                marginTop: 12,
+              }}
+            >
+              Upload a clear, well-lit image for accurate pest identification and
+              instant recommendations.
             </Text>
           </View>
 
@@ -452,42 +574,78 @@ const PestDetection: React.FC = () => {
             {/* Stats Cards */}
             <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
               <View style={{ flexDirection: "row", gap: 12 }}>
-                <View style={{ 
-                  flex: 1, 
-                  backgroundColor: "rgba(255,255,255,0.95)", 
-                  borderRadius: 14, 
-                  padding: 16,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 3,
-                }}>
-                  <Ionicons name="checkmark-circle" size={24} color="#10b981" />
-                  <Text style={{ color: "#111827", fontSize: 24, fontWeight: "800", marginTop: 8 }}>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: "rgba(255,255,255,0.95)",
+                    borderRadius: 14,
+                    padding: 16,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={24}
+                    color="#10b981"
+                  />
+                  <Text
+                    style={{
+                      color: "#111827",
+                      fontSize: 24,
+                      fontWeight: "800",
+                      marginTop: 8,
+                    }}
+                  >
                     {history.length}
                   </Text>
-                  <Text style={{ color: "#6b7280", fontSize: 13, fontWeight: "500", marginTop: 2 }}>
+                  <Text
+                    style={{
+                      color: "#6b7280",
+                      fontSize: 13,
+                      fontWeight: "500",
+                      marginTop: 2,
+                    }}
+                  >
                     Total Scans
                   </Text>
                 </View>
 
-                <View style={{ 
-                  flex: 1, 
-                  backgroundColor: "rgba(255,255,255,0.95)", 
-                  borderRadius: 14, 
-                  padding: 16,
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 3,
-                }}>
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: "rgba(255,255,255,0.95)",
+                    borderRadius: 14,
+                    padding: 16,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
                   <Ionicons name="flash" size={24} color="#f59e0b" />
-                  <Text style={{ color: "#111827", fontSize: 24, fontWeight: "800", marginTop: 8 }}>
+                  <Text
+                    style={{
+                      color: "#111827",
+                      fontSize: 24,
+                      fontWeight: "800",
+                      marginTop: 8,
+                    }}
+                  >
                     {processingTime ? `${processingTime}ms` : "—"}
                   </Text>
-                  <Text style={{ color: "#6b7280", fontSize: 13, fontWeight: "500", marginTop: 2 }}>
+                  <Text
+                    style={{
+                      color: "#6b7280",
+                      fontSize: 13,
+                      fontWeight: "500",
+                      marginTop: 2,
+                    }}
+                  >
                     Last Speed
                   </Text>
                 </View>
@@ -519,9 +677,21 @@ const PestDetection: React.FC = () => {
                     justifyContent: "space-between",
                   }}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
                     <Ionicons name="image" size={20} color="#059669" />
-                    <Text style={{ color: "#111827", fontWeight: "700", fontSize: 16 }}>
+                    <Text
+                      style={{
+                        color: "#111827",
+                        fontWeight: "700",
+                        fontSize: 16,
+                      }}
+                    >
                       Image Analysis
                     </Text>
                   </View>
@@ -530,10 +700,18 @@ const PestDetection: React.FC = () => {
                       onPress={() => {
                         setImageUri(null);
                         setResult(null);
+                        setProcessingTime(null);
+                        stopAlarm(); // ✅ stop any alarm
                       }}
                       activeOpacity={0.7}
                     >
-                      <Text style={{ color: "#059669", fontWeight: "600", fontSize: 14 }}>
+                      <Text
+                        style={{
+                          color: "#059669",
+                          fontWeight: "600",
+                          fontSize: 14,
+                        }}
+                      >
                         Clear
                       </Text>
                     </TouchableOpacity>
@@ -545,9 +723,9 @@ const PestDetection: React.FC = () => {
                     <View>
                       <Image
                         source={{ uri: imageUri }}
-                        style={{ 
-                          width: "100%", 
-                          aspectRatio: 1, 
+                        style={{
+                          width: "100%",
+                          aspectRatio: 1,
                           borderRadius: 12,
                           borderWidth: 2,
                           borderColor: "#e5e7eb",
@@ -555,26 +733,35 @@ const PestDetection: React.FC = () => {
                         resizeMode="cover"
                       />
                       {isLoading && (
-                        <View style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          backgroundColor: "rgba(0,0,0,0.7)",
-                          borderRadius: 12,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}>
+                        <View
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: "rgba(0,0,0,0.7)",
+                            borderRadius: 12,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
                           <ActivityIndicator size="large" color="#fff" />
-                          <Text style={{ color: "#fff", marginTop: 12, fontSize: 15, fontWeight: "600" }}>
+                          <Text
+                            style={{
+                              color: "#fff",
+                              marginTop: 12,
+                              fontSize: 15,
+                              fontWeight: "600",
+                            }}
+                          >
                             Analyzing Image...
                           </Text>
                         </View>
                       )}
                     </View>
                   ) : (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => setShowImageOptions(true)}
                       activeOpacity={0.8}
                     >
@@ -590,21 +777,35 @@ const PestDetection: React.FC = () => {
                           justifyContent: "center",
                         }}
                       >
-                        <View style={{
-                          backgroundColor: "#059669",
-                          borderRadius: 50,
-                          width: 64,
-                          height: 64,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginBottom: 16,
-                        }}>
+                        <View
+                          style={{
+                            backgroundColor: "#059669",
+                            borderRadius: 50,
+                            width: 64,
+                            height: 64,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginBottom: 16,
+                          }}
+                        >
                           <Ionicons name="add" size={32} color="#fff" />
                         </View>
-                        <Text style={{ color: "#111827", fontSize: 16, fontWeight: "600" }}>
+                        <Text
+                          style={{
+                            color: "#111827",
+                            fontSize: 16,
+                            fontWeight: "600",
+                          }}
+                        >
                           Tap to Add Image
                         </Text>
-                        <Text style={{ color: "#9ca3af", fontSize: 13, marginTop: 4 }}>
+                        <Text
+                          style={{
+                            color: "#9ca3af",
+                            fontSize: 13,
+                            marginTop: 4,
+                          }}
+                        >
                           Camera or gallery
                         </Text>
                       </View>
@@ -624,7 +825,11 @@ const PestDetection: React.FC = () => {
                   style={{ marginBottom: 12 }}
                 >
                   <LinearGradient
-                    colors={isLoading ? ["#d1d5db", "#d1d5db"] : ["#059669", "#047857"]}
+                    colors={
+                      isLoading
+                        ? ["#d1d5db", "#d1d5db"]
+                        : ["#059669", "#047857"]
+                    }
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                     style={{
@@ -645,7 +850,14 @@ const PestDetection: React.FC = () => {
                     ) : (
                       <Ionicons name="sparkles" size={22} color="#fff" />
                     )}
-                    <Text style={{ color: "#fff", fontWeight: "700", marginLeft: 10, fontSize: 17 }}>
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontWeight: "700",
+                        marginLeft: 10,
+                        fontSize: 17,
+                      }}
+                    >
                       {isLoading ? "Analyzing Pest..." : "Analyze Pest"}
                     </Text>
                   </LinearGradient>
@@ -668,13 +880,19 @@ const PestDetection: React.FC = () => {
                       borderColor: isLoading ? "#e5e7eb" : "#059669",
                     }}
                   >
-                    <Ionicons name="sync" size={20} color={isLoading ? "#9ca3af" : "#059669"} />
-                    <Text style={{ 
-                      color: isLoading ? "#9ca3af" : "#059669", 
-                      fontWeight: "600", 
-                      marginLeft: 8, 
-                      fontSize: 15 
-                    }}>
+                    <Ionicons
+                      name="sync"
+                      size={20}
+                      color={isLoading ? "#9ca3af" : "#059669"}
+                    />
+                    <Text
+                      style={{
+                        color: isLoading ? "#9ca3af" : "#059669",
+                        fontWeight: "600",
+                        marginLeft: 8,
+                        fontSize: 15,
+                      }}
+                    >
                       Change Image
                     </Text>
                   </View>
@@ -684,9 +902,9 @@ const PestDetection: React.FC = () => {
 
             {/* Detection Result */}
             {result && (
-              <Animated.View 
-                style={{ 
-                  paddingHorizontal: 20, 
+              <Animated.View
+                style={{
+                  paddingHorizontal: 20,
                   marginTop: 24,
                   opacity: fadeAnim,
                   transform: [{ scale: scaleAnim }],
@@ -705,19 +923,43 @@ const PestDetection: React.FC = () => {
                   }}
                 >
                   {/* Result Header */}
-                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                      <View style={{
-                        backgroundColor: "#ecfdf5",
-                        borderRadius: 12,
-                        width: 40,
-                        height: 40,
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
-                      }}>
-                        <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                        gap: 10,
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: "#ecfdf5",
+                          borderRadius: 12,
+                          width: 40,
+                          height: 40,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={24}
+                          color="#10b981"
+                        />
                       </View>
-                      <Text style={{ color: "#111827", fontWeight: "800", fontSize: 20 }}>
+                      <Text
+                        style={{
+                          color: "#111827",
+                          fontWeight: "800",
+                          fontSize: 20,
+                        }}
+                      >
                         Detection Complete
                       </Text>
                     </View>
@@ -733,8 +975,19 @@ const PestDetection: React.FC = () => {
                           borderRadius: 12,
                         }}
                       >
-                        <Ionicons name="share-social" size={18} color="#374151" />
-                        <Text style={{ color: "#374151", fontWeight: "600", marginLeft: 6, fontSize: 14 }}>
+                        <Ionicons
+                          name="share-social"
+                          size={18}
+                          color="#374151"
+                        />
+                        <Text
+                          style={{
+                            color: "#374151",
+                            fontWeight: "600",
+                            marginLeft: 6,
+                            fontSize: 14,
+                          }}
+                        >
                           Share
                         </Text>
                       </View>
@@ -752,22 +1005,50 @@ const PestDetection: React.FC = () => {
                       padding: 18,
                     }}
                   >
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <View style={{ flex: 1 }}>
-                        <Text style={{ color: riskColors.text, fontWeight: "800", fontSize: 22 }}>
+                        <Text
+                          style={{
+                            color: riskColors.text,
+                            fontWeight: "800",
+                            fontSize: 22,
+                          }}
+                        >
                           {pestInfo.title}
                         </Text>
-                        <Text style={{ color: riskColors.text, fontSize: 13, fontStyle: "italic", marginTop: 4, opacity: 0.8 }}>
+                        <Text
+                          style={{
+                            color: riskColors.text,
+                            fontSize: 13,
+                            fontStyle: "italic",
+                            marginTop: 4,
+                            opacity: 0.8,
+                          }}
+                        >
                           {pestInfo.scientificName}
                         </Text>
                       </View>
-                      <View style={{
-                        backgroundColor: riskColors.badge,
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 20,
-                      }}>
-                        <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12 }}>
+                      <View
+                        style={{
+                          backgroundColor: riskColors.badge,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 20,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "#fff",
+                            fontWeight: "700",
+                            fontSize: 12,
+                          }}
+                        >
                           {pestInfo.risk} Risk
                         </Text>
                       </View>
@@ -780,7 +1061,7 @@ const PestDetection: React.FC = () => {
                           Confidence: {confidencePct?.toFixed(1)}%
                         </Text>
                       </View>
-                      {processingTime && (
+                      {processingTime !== null && (
                         <View style={{ flexDirection: "row", alignItems: "center" }}>
                           <Ionicons name="speedometer" size={16} color={riskColors.text} />
                           <Text style={{ color: riskColors.text, fontWeight: "600", fontSize: 14, marginLeft: 6 }}>
@@ -814,21 +1095,21 @@ const PestDetection: React.FC = () => {
                     </View>
                     {pestInfo.symptoms.map((symptom, idx) => (
                       <View key={idx} style={{ flexDirection: "row", marginBottom: 10, alignItems: "flex-start" }}>
-                        <View style={{
-                          backgroundColor: "#10b981",
-                          borderRadius: 10,
-                          width: 20,
-                          height: 20,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginRight: 10,
-                          marginTop: 2,
-                        }}>
+                        <View
+                          style={{
+                            backgroundColor: "#10b981",
+                            borderRadius: 10,
+                            width: 20,
+                            height: 20,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 10,
+                            marginTop: 2,
+                          }}
+                        >
                           <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{idx + 1}</Text>
                         </View>
-                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>
-                          {symptom}
-                        </Text>
+                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>{symptom}</Text>
                       </View>
                     ))}
                   </View>
@@ -843,21 +1124,21 @@ const PestDetection: React.FC = () => {
                     </View>
                     {pestInfo.actions.map((action, idx) => (
                       <View key={idx} style={{ flexDirection: "row", marginBottom: 10, alignItems: "flex-start" }}>
-                        <View style={{
-                          backgroundColor: "#dc2626",
-                          borderRadius: 10,
-                          width: 20,
-                          height: 20,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          marginRight: 10,
-                          marginTop: 2,
-                        }}>
+                        <View
+                          style={{
+                            backgroundColor: "#dc2626",
+                            borderRadius: 10,
+                            width: 20,
+                            height: 20,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 10,
+                            marginTop: 2,
+                          }}
+                        >
                           <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>{idx + 1}</Text>
                         </View>
-                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>
-                          {action}
-                        </Text>
+                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>{action}</Text>
                       </View>
                     ))}
                   </View>
@@ -873,9 +1154,7 @@ const PestDetection: React.FC = () => {
                     {pestInfo.prevention.map((item, idx) => (
                       <View key={idx} style={{ flexDirection: "row", marginBottom: 10, alignItems: "flex-start" }}>
                         <Ionicons name="checkmark-circle" size={20} color="#3b82f6" style={{ marginRight: 8, marginTop: 2 }} />
-                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>
-                          {item}
-                        </Text>
+                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>{item}</Text>
                       </View>
                     ))}
                   </View>
@@ -891,9 +1170,7 @@ const PestDetection: React.FC = () => {
                     {pestInfo.biologicalControl.map((item, idx) => (
                       <View key={idx} style={{ flexDirection: "row", marginBottom: 10, alignItems: "flex-start" }}>
                         <Ionicons name="leaf-outline" size={18} color="#10b981" style={{ marginRight: 8, marginTop: 2 }} />
-                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>
-                          {item}
-                        </Text>
+                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>{item}</Text>
                       </View>
                     ))}
                   </View>
@@ -909,27 +1186,27 @@ const PestDetection: React.FC = () => {
                     {pestInfo.chemicalControl.map((item, idx) => (
                       <View key={idx} style={{ flexDirection: "row", marginBottom: 10, alignItems: "flex-start" }}>
                         <Ionicons name="medical" size={18} color="#8b5cf6" style={{ marginRight: 8, marginTop: 2 }} />
-                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>
-                          {item}
-                        </Text>
+                        <Text style={{ color: "#4b5563", fontSize: 14, lineHeight: 22, flex: 1 }}>{item}</Text>
                       </View>
                     ))}
                   </View>
 
                   {/* Warning Footer */}
-                  <View style={{
-                    marginTop: 22,
-                    backgroundColor: "#fef3c7",
-                    borderLeftWidth: 4,
-                    borderLeftColor: "#f59e0b",
-                    padding: 14,
-                    borderRadius: 10,
-                  }}>
+                  <View
+                    style={{
+                      marginTop: 22,
+                      backgroundColor: "#fef3c7",
+                      borderLeftWidth: 4,
+                      borderLeftColor: "#f59e0b",
+                      padding: 14,
+                      borderRadius: 10,
+                    }}
+                  >
                     <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
                       <Ionicons name="alert-circle" size={20} color="#d97706" style={{ marginRight: 10, marginTop: 2 }} />
                       <Text style={{ color: "#92400e", fontSize: 13, lineHeight: 20, flex: 1 }}>
-                        Always consult with a local agricultural expert before applying any treatments. 
-                        Follow all safety guidelines and local regulations when using pesticides.
+                        Always consult a local agricultural expert before applying treatments. Follow safety rules and local
+                        regulations for any pesticide use.
                       </Text>
                     </View>
                   </View>
@@ -969,14 +1246,16 @@ const PestDetection: React.FC = () => {
                 paddingHorizontal: 20,
               }}
             >
-              <View style={{
-                width: 40,
-                height: 5,
-                backgroundColor: "#e5e7eb",
-                borderRadius: 10,
-                alignSelf: "center",
-                marginBottom: 20,
-              }} />
+              <View
+                style={{
+                  width: 40,
+                  height: 5,
+                  backgroundColor: "#e5e7eb",
+                  borderRadius: 10,
+                  alignSelf: "center",
+                  marginBottom: 20,
+                }}
+              />
 
               <Text style={{ fontSize: 22, fontWeight: "800", color: "#111827", marginBottom: 8 }}>
                 Add Image
@@ -985,11 +1264,7 @@ const PestDetection: React.FC = () => {
                 Choose how you'd like to add your image
               </Text>
 
-              <TouchableOpacity
-                onPress={captureFromCamera}
-                activeOpacity={0.8}
-                style={{ marginBottom: 12 }}
-              >
+              <TouchableOpacity onPress={captureFromCamera} activeOpacity={0.8} style={{ marginBottom: 12 }}>
                 <View
                   style={{
                     backgroundColor: "#f9fafb",
@@ -1001,14 +1276,16 @@ const PestDetection: React.FC = () => {
                     borderColor: "#e5e7eb",
                   }}
                 >
-                  <View style={{
-                    backgroundColor: "#059669",
-                    borderRadius: 14,
-                    width: 56,
-                    height: 56,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
+                  <View
+                    style={{
+                      backgroundColor: "#059669",
+                      borderRadius: 14,
+                      width: 56,
+                      height: 56,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Ionicons name="camera" size={28} color="#fff" />
                   </View>
                   <View style={{ marginLeft: 16, flex: 1 }}>
@@ -1023,11 +1300,7 @@ const PestDetection: React.FC = () => {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={pickFromGallery}
-                activeOpacity={0.8}
-                style={{ marginBottom: 12 }}
-              >
+              <TouchableOpacity onPress={pickFromGallery} activeOpacity={0.8} style={{ marginBottom: 12 }}>
                 <View
                   style={{
                     backgroundColor: "#f9fafb",
@@ -1039,14 +1312,16 @@ const PestDetection: React.FC = () => {
                     borderColor: "#e5e7eb",
                   }}
                 >
-                  <View style={{
-                    backgroundColor: "#0284c7",
-                    borderRadius: 14,
-                    width: 56,
-                    height: 56,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
+                  <View
+                    style={{
+                      backgroundColor: "#0284c7",
+                      borderRadius: 14,
+                      width: 56,
+                      height: 56,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Ionicons name="images" size={28} color="#fff" />
                   </View>
                   <View style={{ marginLeft: 16, flex: 1 }}>
@@ -1061,11 +1336,7 @@ const PestDetection: React.FC = () => {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setShowImageOptions(false)}
-                activeOpacity={0.8}
-                style={{ marginTop: 8 }}
-              >
+              <TouchableOpacity onPress={() => setShowImageOptions(false)} activeOpacity={0.8} style={{ marginTop: 8 }}>
                 <View
                   style={{
                     backgroundColor: "#fff",
@@ -1095,16 +1366,18 @@ const PestDetection: React.FC = () => {
       >
         <View style={{ flex: 1, backgroundColor: "#f9fafb" }}>
           <View style={{ paddingTop: insets.top }}>
-            <View style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 20,
-              paddingVertical: 16,
-              backgroundColor: "#fff",
-              borderBottomWidth: 1,
-              borderBottomColor: "#e5e7eb",
-            }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                paddingVertical: 16,
+                backgroundColor: "#fff",
+                borderBottomWidth: 1,
+                borderBottomColor: "#e5e7eb",
+              }}
+            >
               <Text style={{ fontSize: 22, fontWeight: "800", color: "#111827" }}>
                 Detection History
               </Text>
@@ -1120,15 +1393,17 @@ const PestDetection: React.FC = () => {
           >
             {history.length === 0 ? (
               <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 60 }}>
-                <View style={{
-                  backgroundColor: "#e5e7eb",
-                  borderRadius: 50,
-                  width: 100,
-                  height: 100,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 20,
-                }}>
+                <View
+                  style={{
+                    backgroundColor: "#e5e7eb",
+                    borderRadius: 50,
+                    width: 100,
+                    height: 100,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 20,
+                  }}
+                >
                   <Ionicons name="time-outline" size={50} color="#9ca3af" />
                 </View>
                 <Text style={{ fontSize: 18, fontWeight: "700", color: "#111827", marginBottom: 8 }}>
@@ -1168,27 +1443,38 @@ const PestDetection: React.FC = () => {
                         resizeMode="cover"
                       />
                       <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 6,
+                          }}
+                        >
                           <Text style={{ fontSize: 16, fontWeight: "700", color: "#111827" }}>
                             {item.pest}
                           </Text>
-                          <View style={{
-                            backgroundColor: itemRiskColors.badge,
-                            paddingHorizontal: 10,
-                            paddingVertical: 4,
-                            borderRadius: 12,
-                          }}>
+                          <View
+                            style={{
+                              backgroundColor: itemRiskColors.badge,
+                              paddingHorizontal: 10,
+                              paddingVertical: 4,
+                              borderRadius: 12,
+                            }}
+                          >
                             <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>
                               {item.risk}
                             </Text>
                           </View>
                         </View>
+
                         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
                           <Ionicons name="analytics" size={14} color="#6b7280" />
                           <Text style={{ fontSize: 13, color: "#6b7280", marginLeft: 6 }}>
                             {(item.confidence * 100).toFixed(1)}% confidence
                           </Text>
                         </View>
+
                         <View style={{ flexDirection: "row", alignItems: "center" }}>
                           <Ionicons name="time-outline" size={14} color="#6b7280" />
                           <Text style={{ fontSize: 13, color: "#6b7280", marginLeft: 6 }}>
@@ -1208,4 +1494,4 @@ const PestDetection: React.FC = () => {
   );
 };
 
-export default PestDetection
+export default PestDetection;
