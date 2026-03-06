@@ -12,7 +12,7 @@ export type MainTabParamList = {
   Home: undefined;
   PestDetection: undefined;
   DiseaseDetection: undefined;
-  Growth: undefined;
+  PineappleDetection: undefined;
 };
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -30,8 +30,8 @@ export default function BottomNavigation() {
 
           if (route.name === "Home") iconName = "home-outline";
           if (route.name === "PestDetection") iconName = "bug-outline";
-          if (route.name === "DiseaseDetection") iconName = "leaf-outline";
-          if (route.name === "Growth")
+          if (route.name === "Disease") iconName = "leaf-outline";
+          if (route.name === "PineappleDetection")
             iconName = "trending-up-outline";
 
           return <Ionicons name={iconName} size={size} color={color} />;

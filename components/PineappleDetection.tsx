@@ -23,7 +23,7 @@ import {
   detectPineappleGrowth,
   toDetectionResultFromGrowthPredict,
 } from "../services/apiService";
-import { stopAlarm } from "../utils/alerts";
+import { speakByGrowthAlert, stopAlarm } from "../utils/alerts";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addDetection,
@@ -213,6 +213,8 @@ const PineappleDetection: React.FC = () => {
         selectedPlantId || undefined,
         timestamp
       );
+
+      await speakByGrowthAlert(detectionResult);
 
       dispatch(addDetection(detectionResult));
       dispatch(setCurrentDetection(detectionResult));

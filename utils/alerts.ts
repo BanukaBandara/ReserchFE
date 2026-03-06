@@ -1,14 +1,51 @@
 import * as Speech from "expo-speech";
+import { Audio } from "expo-av";
 import { DetectionResult, HealthStatus } from "../types/detection";
+
+let currentSound: Audio.Sound | null = null;
 
 // Stop any playing alarm
 export const stopAlarm = async () => {
-  return;
+  try {
+    if (currentSound) {
+      await currentSound.stopAsync();
+      await currentSound.unloadAsync();
+      currentSound = null;
+    }
+  } catch (e) {
+    console.log("Stop alarm error:", e);
+  }
 };
 
 // Play alarm sound
 export const playAlarm = async () => {
-  return;
+  try {
+    // Stop previous sound first
+    await stopAlarm();
+
+    // ✅ IMPORTANT: Set audio mode (Fix for iOS silent mode)
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    });
+
+    // Load and play alarm sound
+    const { sound } = await Audio.Sound.createAsync(
+      require("../assets/sounds/alert.mp3"),
+      {
+        shouldPlay: true,
+        volume: 1.0,
+      }
+    );
+
+    currentSound = sound;
+
+    await sound.playAsync();
+  } catch (e) {
+    console.log("Alarm error:", e);
+  }
 };
 
 // Text to speech

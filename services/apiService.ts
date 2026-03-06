@@ -4,24 +4,9 @@ import {
   HealthStatus,
   HealthIssue,
 } from "../types/detection";
-import { environment } from "../environment/environment";
 
 // API Configuration
-const API_BASE_URL = String(environment?.API_BASE_URL || "").replace(/\/+$/, "");
-
-const fetchWithTimeout = async (
-  input: RequestInfo,
-  init: RequestInit & { timeoutMs?: number } = {}
-) => {
-  const { timeoutMs = 65000, ...rest } = init;
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(input, { ...rest, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
-};
+const API_BASE_URL = "http://192.168.8.181:3001"; // your PC IP
 
 export class APIError extends Error {
   constructor(public message: string, public statusCode?: number) {
@@ -102,23 +87,14 @@ const toStringArray = (value: unknown): string[] => {
 
 const buildImageFormData = (
   imageUri: string,
-  extra?: Record<string, string | number | undefined>,
-  options?: { fileFieldName?: string }
+  extra?: Record<string, string | number | undefined>
 ) => {
   const formData = new FormData();
   const filename = imageUri.split("/").pop() || "photo.jpg";
   const extMatch = /\.(\w+)$/.exec(filename);
-  const ext = extMatch?.[1]?.toLowerCase();
-  const mimeType =
-    ext === "jpg" || ext === "jpeg"
-      ? "image/jpeg"
-      : ext === "png"
-      ? "image/png"
-      : "image/jpeg";
+  const mimeType = extMatch ? `image/${extMatch[1]}` : "image/jpeg";
 
-  const fileFieldName = options?.fileFieldName || "image";
-
-  formData.append(fileFieldName, {
+  formData.append("image", {
     uri: imageUri,
     name: filename,
     type: mimeType,
@@ -167,14 +143,13 @@ export const detectPestFromImage = async (
       formData.append("location", metadata.location);
     }
 
-    const response = await fetchWithTimeout(`${API_BASE_URL}/api/predict`, {
+    const response = await fetch(`${API_BASE_URL}/api/predict`, {
       method: "POST",
       body: formData,
       headers: {
         Accept: "application/json",
         // IMPORTANT: do NOT set Content-Type for FormData in React Native
       },
-      timeoutMs: 65000,
     });
 
     const parsed = await safeJson(response);
@@ -188,11 +163,8 @@ export const detectPestFromImage = async (
     }
 
     return parsed.ok ? parsed.data : parsed.data;
-  } catch (error: any) {
+  } catch (error) {
     if (error instanceof APIError) throw error;
-    if (error?.name === "AbortError") {
-      throw new APIError("Request timed out. Please check the server and try again.");
-    }
     throw new APIError(error instanceof Error ? error.message : "Failed to analyze image");
   }
 };
@@ -211,38 +183,32 @@ export const detectPineappleGrowth = async (
     location?: string;
   }
 ): Promise<any> => {
-  const endpoints: Array<{ path: string; fileFieldName: string }> = [
-    { path: "/api/growth/predict", fileFieldName: "file" },
-    { path: "/api/growth-predict", fileFieldName: "file" },
-    { path: "/api/predict-growth", fileFieldName: "file" },
-    { path: "/api/pineapple-growth/predict", fileFieldName: "file" },
-    // Fallback (older builds): returns label/confidence only
-    { path: "/api/predict", fileFieldName: "image" },
+  const endpoints = [
+    "/api/growth/predict",
+    "/api/growth-predict",
+    "/api/predict-growth",
+    "/api/pineapple-growth/predict",
+    "/api/predict",
   ];
+
+  const formData = buildImageFormData(imageUri, {
+    farmer_id: metadata?.farmerId,
+    region: metadata?.region,
+    language: metadata?.language || "en",
+    days_from_planting: metadata?.daysFromPlanting,
+    location: metadata?.location,
+  });
 
   let lastError: APIError | null = null;
 
-  for (const { path, fileFieldName } of endpoints) {
+  for (const path of endpoints) {
     try {
-      const formData = buildImageFormData(
-        imageUri,
-        {
-          farmer_id: metadata?.farmerId,
-          region: metadata?.region,
-          language: metadata?.language || "en",
-          days_from_planting: metadata?.daysFromPlanting,
-          location: metadata?.location,
-        },
-        { fileFieldName }
-      );
-
-      const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
         method: "POST",
         body: formData,
         headers: {
           Accept: "application/json",
         },
-        timeoutMs: 90000,
       });
 
       const parsed = await safeJson(response);
@@ -260,13 +226,9 @@ export const detectPineappleGrowth = async (
       }
 
       return parsed.ok ? parsed.data : parsed.data;
-    } catch (error: any) {
+    } catch (error) {
       if (error instanceof APIError) {
         lastError = error;
-      } else if (error?.name === "AbortError") {
-        lastError = new APIError(
-          "Request timed out. Ensure the backend + ML service are running, then retry."
-        );
       } else {
         lastError = new APIError(
           error instanceof Error ? error.message : "Failed to analyze pineapple growth"
@@ -405,15 +367,11 @@ export const generateVoiceAlert = async (
   language: string = "en"
 ): Promise<{ message_text: string; audio_url?: string }> => {
   try {
-    const response = await fetchWithTimeout(
-      `${API_BASE_URL}/api/voice-alert/${detectionId}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ language }),
-        timeoutMs: 30000,
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/voice-alert/${detectionId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ language }),
+    });
 
     const parsed = await safeJson(response);
 
@@ -437,14 +395,10 @@ export const generateVoiceAlert = async (
  */
 export const getDetectionHistory = async (plantId: string): Promise<DetectionResult[]> => {
   try {
-    const response = await fetchWithTimeout(
-      `${API_BASE_URL}/api/plants/${plantId}/detections`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        timeoutMs: 30000,
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/plants/${plantId}/detections`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
 
     const parsed = await safeJson(response);
 
@@ -468,11 +422,10 @@ export const getDetectionHistory = async (plantId: string): Promise<DetectionRes
  */
 export const saveDetection = async (detection: DetectionResult): Promise<DetectionResult> => {
   try {
-    const response = await fetchWithTimeout(`${API_BASE_URL}/api/detections`, {
+    const response = await fetch(`${API_BASE_URL}/api/detections`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(detection),
-      timeoutMs: 30000,
     });
 
     const parsed = await safeJson(response);

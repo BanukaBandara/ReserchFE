@@ -1,7 +1,9 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import { Audio } from "expo-av";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Dimensions,
   Image,
   SafeAreaView,
@@ -10,6 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { environment } from "../environment/environment";
+import { generateVoiceAlert } from "../services/apiService";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { HealthStatus, HealthIssue } from "../types/detection";
 
@@ -22,6 +26,16 @@ const DetectionResults: React.FC = () => {
     (state) => state.detections.currentDetection
   );
   const plants = useAppSelector((state) => state.plants.plants);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const [isPlayingVoice, setIsPlayingVoice] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
 
   if (!detection) {
     return (
@@ -46,6 +60,65 @@ const DetectionResults: React.FC = () => {
       : detection.health_status === HealthStatus.WARNING
       ? "#fef3c7"
       : "#fee2e2";
+
+  const handlePlayVoiceAlert = async () => {
+    if (isPlayingVoice) {
+      return;
+    }
+
+    try {
+      setIsPlayingVoice(true);
+      const response = await generateVoiceAlert(detection.id, "en");
+
+      const baseUrl = (environment.API_BASE_URL || "").replace(/\/$/, "");
+      const resolvedAudioUrl = response.audio_url
+        ? /^https?:\/\//i.test(response.audio_url)
+          ? response.audio_url
+          : `${baseUrl}/${response.audio_url.replace(/^\/+/, "")}`
+        : undefined;
+
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      if (!resolvedAudioUrl) {
+        Alert.alert("Voice Alert", response.message_text);
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: resolvedAudioUrl },
+        { shouldPlay: true, isMuted: false, volume: 1.0 }
+      );
+
+      soundRef.current = sound;
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (!status.isLoaded) {
+          return;
+        }
+
+        if (status.didJustFinish) {
+          sound.unloadAsync();
+          if (soundRef.current === sound) {
+            soundRef.current = null;
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error generating voice alert:", error);
+      Alert.alert("Voice Alert Error", "Could not play the voice alert.");
+    } finally {
+      setIsPlayingVoice(false);
+    }
+  };
 
   const handleAddToExistingPlant = () => {
     if (plants.length > 0) {
@@ -351,6 +424,24 @@ const DetectionResults: React.FC = () => {
               ))}
             </View>
           )}
+
+          {/* Voice Alert Button */}
+          <TouchableOpacity
+            onPress={handlePlayVoiceAlert}
+            className={`py-4 rounded-2xl flex-row items-center justify-center mb-4 ${
+              isPlayingVoice ? "bg-indigo-400" : "bg-indigo-600"
+            }`}
+            disabled={isPlayingVoice}
+          >
+            <MaterialCommunityIcons
+              name="volume-high"
+              size={24}
+              color="white"
+            />
+            <Text className="text-white text-lg font-bold ml-2">
+              {isPlayingVoice ? "Preparing Voice Alert..." : "Play Voice Alert"}
+            </Text>
+          </TouchableOpacity>
 
           {/* Save to Plant */}
           {!detection.plantId && (
