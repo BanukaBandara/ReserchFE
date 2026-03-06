@@ -2,8 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { DetectionResult, Plant } from '../../types/detection';
 
+type PlantRecord = Plant & {
+    currentStage?: DetectionResult['growth_stage'];
+    currentHealthStatus?: DetectionResult['health_status'];
+    lastAnalysisDate?: string;
+    hasActiveAlerts?: boolean;
+    alertCount?: number;
+    notes?: string;
+};
+
 interface PlantState {
-    plants: Plant[];
+    plants: PlantRecord[];
     selectedPlantId: string | null;
     loading: boolean;
     error: string | null;
@@ -33,7 +42,7 @@ export const loadPlants = createAsyncThunk('plants/loadPlants', async () => {
 
 export const savePlantsToStorage = createAsyncThunk(
     'plants/savePlantsToStorage',
-    async (plants: Plant[]) => {
+    async (plants: PlantRecord[]) => {
         try {
             await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(plants));
             return plants;
@@ -83,11 +92,15 @@ const plantSlice = createSlice({
                 plant.currentStage = action.payload.detection.growth_stage;
                 plant.currentHealthStatus = action.payload.detection.health_status;
                 plant.lastAnalysisDate = action.payload.detection.timestamp;
-                plant.hasActiveAlerts = action.payload.detection.health_status !== 'healthy';
+                plant.hasActiveAlerts =
+                    action.payload.detection.health_status !== 'healthy' ||
+                    Boolean(action.payload.detection.stunted_growth?.isStunted);
 
                 // Update alert count
                 plant.alertCount = plant.detectionHistory.filter(
-                    (d) => d.health_status !== 'healthy'
+                    (d) =>
+                        d.health_status !== 'healthy' ||
+                        Boolean(d.stunted_growth?.isStunted)
                 ).length;
 
                 state.error = null;

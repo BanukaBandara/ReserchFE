@@ -432,8 +432,8 @@ export default function Home() {
               />
 
               <FeatureCard
-                title="Weather & Care Tips"
-                subtitle="Get personalized care recommendations based on local weather conditions"
+                title="Soil"
+                subtitle="Get soil conditions"
                 icon="partly-sunny"
                 gradient={["#f59e0b", "#fbbf24"]}
                 stats="Daily Updates"

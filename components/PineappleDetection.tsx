@@ -2,12 +2,14 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Image,
+  Platform,
   Modal,
   SafeAreaView,
   ScrollView,
@@ -16,14 +18,19 @@ import {
   View,
   Animated,
 } from "react-native";
-import { APIError, detectPineappleGrowth } from "../services/apiService";
+import {
+  APIError,
+  detectPineappleGrowth,
+  toDetectionResultFromGrowthPredict,
+} from "../services/apiService";
+import { speakByGrowthAlert, stopAlarm } from "../utils/alerts";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addDetection,
   setCurrentDetection,
 } from "../store/slices/detectionSlice";
 import { addDetectionToPlant } from "../store/slices/plantSlice";
-import { DetectionResult, GrowthStage } from "../types/detection";
+import { DetectionResult } from "../types/detection";
 import { RootStackParamList } from "../app/App";
 
 const { width, height } = Dimensions.get("window");
@@ -74,9 +81,16 @@ const PineappleDetection: React.FC = () => {
   const selectedPlantId = useAppSelector(
     (state) => state.plants.selectedPlantId
   );
+  const user = useAppSelector((state) => state.auth.user);
   const selectedPlant = useAppSelector((state) =>
     state.plants.plants.find((p: any) => p.id === selectedPlantId)
   );
+
+  useEffect(() => {
+    return () => {
+      stopAlarm();
+    };
+  }, []);
 
   // Toggle Advanced Features Dropdown
   const toggleFeatures = () => {
@@ -167,30 +181,40 @@ const PineappleDetection: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await detectPineappleGrowth(imageUri, {
-        daysFromPlanting: selectedPlant?.detectionHistory.length,
-        location: selectedPlant?.location,
+      // Optimize upload: resize + compress (mobile only). Falls back to original.
+      let uploadUri = imageUri;
+      if (Platform.OS !== "web") {
+        try {
+          const manipulated = await ImageManipulator.manipulateAsync(
+            imageUri,
+            [{ resize: { width: 1024 } }],
+            {
+              compress: 0.7,
+              format: ImageManipulator.SaveFormat.JPEG,
+            }
+          );
+          if (manipulated?.uri) uploadUri = manipulated.uri;
+        } catch (e) {
+          // keep original
+        }
+      }
+
+      const response = await detectPineappleGrowth(uploadUri, {
+        farmerId: user?._id,
+        // Keep region optional; you can later derive it from location/GPS
+        region: undefined,
+        language: "en",
       });
 
-      const detectionResult: DetectionResult = {
-        id: `detection_${Date.now()}_${Math.random()
-          .toString(36)
-          .substr(2, 9)}`,
-        success: true,
-        growth_stage: response.growth_stage as GrowthStage,
-        confidence: response.confidence,
-        health_status: response.health_status as any,
-        health_issues: response.health_issues || [],
-        stunted_growth: response.stunted_growth,
-        nutrient_analysis: response.nutrient_analysis,
-        all_predictions: response.all_predictions || {},
-        recommendations: response.recommendations || [],
-        action_items: response.action_items || [],
-        timestamp: new Date().toISOString(),
-        imageUri: imageUri,
-        plantId: selectedPlantId || undefined,
-        daysFromPlanting: selectedPlant?.detectionHistory.length,
-      };
+      const timestamp = new Date().toISOString();
+      const detectionResult: DetectionResult = toDetectionResultFromGrowthPredict(
+        response,
+        imageUri,
+        selectedPlantId || undefined,
+        timestamp
+      );
+
+      await speakByGrowthAlert(detectionResult);
 
       dispatch(addDetection(detectionResult));
       dispatch(setCurrentDetection(detectionResult));
@@ -224,6 +248,7 @@ const PineappleDetection: React.FC = () => {
   const clearImage = () => {
     setSelectedImage(null);
     setSelectedMode(null);
+    stopAlarm();
   };
 
   const maxHeight = featuresHeight.interpolate({
