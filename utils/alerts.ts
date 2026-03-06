@@ -1,5 +1,6 @@
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
+import { DetectionResult, HealthStatus } from "../types/detection";
 
 let currentSound: Audio.Sound | null = null;
 
@@ -90,6 +91,43 @@ export const speakByRisk = async (
 
   speak(
     `Low risk detected. Confidence ${confidencePct.toFixed(
+      0
+    )} percent. Continue regular monitoring.`
+  );
+  await stopAlarm();
+};
+
+// Growth-focused voice + alarm logic for pineapple growth detection
+export const speakByGrowthAlert = async (detection: DetectionResult) => {
+  const confidencePct = Math.max(0, Math.min(1, detection.confidence)) * 100;
+  const stage = (detection.growth_stage || "vegetative").replace(/_/g, " ");
+  const isStunted = Boolean(detection.stunted_growth?.isStunted);
+
+  if (detection.health_status === HealthStatus.CRITICAL || isStunted) {
+    const severity = detection.stunted_growth?.severity
+      ? ` Severity ${detection.stunted_growth.severity}.`
+      : "";
+    speak(
+      `Critical growth alert. Stage ${stage}. Confidence ${confidencePct.toFixed(
+        0
+      )} percent.${severity} Immediate intervention is recommended.`
+    );
+    await playAlarm();
+    return;
+  }
+
+  if (detection.health_status === HealthStatus.WARNING) {
+    speak(
+      `Growth warning. Stage ${stage}. Confidence ${confidencePct.toFixed(
+        0
+      )} percent. Monitor this plant and follow recommendations.`
+    );
+    await stopAlarm();
+    return;
+  }
+
+  speak(
+    `Growth status healthy. Stage ${stage}. Confidence ${confidencePct.toFixed(
       0
     )} percent. Continue regular monitoring.`
   );

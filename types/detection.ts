@@ -62,6 +62,12 @@ export interface Plant {
     name: string;
     location: string;
     detectionHistory: DetectionResult[];
+    currentStage?: GrowthStage;
+    currentHealthStatus?: HealthStatus;
+    lastAnalysisDate?: string;
+    hasActiveAlerts?: boolean;
+    alertCount?: number;
+    notes?: string;
     createdAt: string;
     updatedAt: string;
 }
