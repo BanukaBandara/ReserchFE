@@ -29,7 +29,7 @@ const FeatureCard = ({
   title: string;
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
-  gradient: string[];
+  gradient: readonly [string, string, ...string[]];
   stats?: string;
   onPress: () => void;
 }) => {

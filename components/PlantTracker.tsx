@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { v4 as uuidv4 } from "react-native-uuid";
+import uuid from "react-native-uuid";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addPlant,
@@ -53,17 +53,19 @@ const PlantTracker: React.FC = () => {
       return;
     }
 
+    const now = new Date().toISOString();
     const newPlant: Plant = {
-      id: uuidv4() as string,
+      id: String(uuid.v4()),
       name: plantName,
       location: location || "Unknown",
-      dateAdded: new Date().toISOString(),
-      currentStage: GrowthStage.SEEDLING,
+      currentStage: "seedling",
       currentHealthStatus: HealthStatus.HEALTHY,
       detectionHistory: [],
       notes: notes,
       hasActiveAlerts: false,
       alertCount: 0,
+      createdAt: now,
+      updatedAt: now,
     };
 
     dispatch(addPlant(newPlant));
@@ -113,22 +115,24 @@ const PlantTracker: React.FC = () => {
 
   const getGrowthColor = (stage: GrowthStage) => {
     const colors: Record<GrowthStage, string> = {
-      [GrowthStage.SEEDLING]: "#3b82f6",
-      [GrowthStage.VEGETATIVE]: "#10b981",
-      [GrowthStage.FLOWERING]: "#f59e0b",
-      [GrowthStage.FRUITING]: "#ec4899",
-      [GrowthStage.MATURE]: "#6366f1",
+      seedling: "#3b82f6",
+      vegetative: "#10b981",
+      pre_flowering: "#14b8a6",
+      flowering: "#f59e0b",
+      fruiting: "#ec4899",
+      mature: "#6366f1",
     };
     return colors[stage] || "#6b7280";
   };
 
   const getStageIcon = (stage: GrowthStage) => {
     const icons: Record<GrowthStage, string> = {
-      [GrowthStage.SEEDLING]: "sprout",
-      [GrowthStage.VEGETATIVE]: "leaf",
-      [GrowthStage.FLOWERING]: "flower",
-      [GrowthStage.FRUITING]: "fruit-grapes",
-      [GrowthStage.MATURE]: "crown",
+      seedling: "sprout",
+      vegetative: "leaf",
+      pre_flowering: "flower-outline",
+      flowering: "flower",
+      fruiting: "fruit-pineapple",
+      mature: "crown",
     };
     return icons[stage] || "leaf";
   };
@@ -162,7 +166,7 @@ const PlantTracker: React.FC = () => {
           {plants.length === 0 ? (
             <View className="flex-1 items-center justify-center px-4">
               <MaterialCommunityIcons
-                name="flower-petal"
+                name={"flower" as any}
                 size={80}
                 color="#d1d5db"
               />
@@ -227,7 +231,7 @@ const PlantTracker: React.FC = () => {
                       className="flex-1 p-3 rounded-2xl"
                       style={{
                         backgroundColor: getHealthBadgeColor(
-                          plant.currentHealthStatus
+                          plant.currentHealthStatus ?? HealthStatus.HEALTHY
                         ).bg,
                       }}
                     >
@@ -236,16 +240,21 @@ const PlantTracker: React.FC = () => {
                       </Text>
                       <View className="flex-row items-center">
                         <MaterialCommunityIcons
-                          name={getStageIcon(plant.currentStage)}
+                          name={
+                            getStageIcon(plant.currentStage ?? "vegetative") as any
+                          }
                           size={20}
-                          color={getGrowthColor(plant.currentStage)}
+                          color={getGrowthColor(plant.currentStage ?? "vegetative")}
                         />
                         <Text
                           className="text-sm font-bold ml-1"
-                          style={{ color: getGrowthColor(plant.currentStage) }}
+                          style={{
+                            color: getGrowthColor(plant.currentStage ?? "vegetative"),
+                          }}
                         >
-                          {plant.currentStage.charAt(0).toUpperCase() +
-                            plant.currentStage.slice(1)}
+                          {String(plant.currentStage ?? "vegetative")
+                            .replace(/_/g, " ")
+                            .replace(/^\w/, (c) => c.toUpperCase())}
                         </Text>
                       </View>
                     </View>
@@ -255,7 +264,7 @@ const PlantTracker: React.FC = () => {
                       className="flex-1 p-3 rounded-2xl"
                       style={{
                         backgroundColor: getHealthBadgeColor(
-                          plant.currentHealthStatus
+                          plant.currentHealthStatus ?? HealthStatus.HEALTHY
                         ).bg,
                       }}
                     >
@@ -265,28 +274,32 @@ const PlantTracker: React.FC = () => {
                       <View className="flex-row items-center">
                         <MaterialCommunityIcons
                           name={
-                            plant.currentHealthStatus === HealthStatus.HEALTHY
+                            (plant.currentHealthStatus ?? HealthStatus.HEALTHY) ===
+                            HealthStatus.HEALTHY
                               ? "heart"
-                              : plant.currentHealthStatus ===
+                              : (plant.currentHealthStatus ?? HealthStatus.HEALTHY) ===
                                 HealthStatus.WARNING
                               ? "alert-circle"
                               : "heart-broken"
                           }
                           size={20}
                           color={
-                            getHealthBadgeColor(plant.currentHealthStatus).text
+                            getHealthBadgeColor(
+                              plant.currentHealthStatus ?? HealthStatus.HEALTHY
+                            ).text
                           }
                         />
                         <Text
                           className="text-sm font-bold ml-1"
                           style={{
                             color: getHealthBadgeColor(
-                              plant.currentHealthStatus
+                              plant.currentHealthStatus ?? HealthStatus.HEALTHY
                             ).text,
                           }}
                         >
-                          {plant.currentHealthStatus.charAt(0).toUpperCase() +
-                            plant.currentHealthStatus.slice(1)}
+                          {String(
+                            plant.currentHealthStatus ?? HealthStatus.HEALTHY
+                          ).replace(/^\w/, (c) => c.toUpperCase())}
                         </Text>
                       </View>
                     </View>
@@ -442,10 +455,14 @@ const PlantDetailView: React.FC<{ plant: Plant; onBack: () => void }> = ({
         {/* Quick Stats */}
         <View className="bg-white rounded-3xl p-6 mb-4 shadow-sm">
           <View className="flex-row justify-between mb-4">
-            <StatCard label="Stage" value={plant.currentStage} icon="leaf" />
+            <StatCard
+              label="Stage"
+              value={plant.currentStage ?? "-"}
+              icon="leaf"
+            />
             <StatCard
               label="Health"
-              value={plant.currentHealthStatus}
+              value={plant.currentHealthStatus ?? "-"}
               icon="heart"
             />
             <StatCard
@@ -458,7 +475,7 @@ const PlantDetailView: React.FC<{ plant: Plant; onBack: () => void }> = ({
           <View className="border-t border-gray-200 pt-4">
             <Text className="text-gray-600 text-sm mb-2">Added</Text>
             <Text className="text-gray-800 font-bold">
-              {new Date(plant.dateAdded).toLocaleDateString()}
+              {new Date(plant.createdAt).toLocaleDateString()}
             </Text>
           </View>
         </View>

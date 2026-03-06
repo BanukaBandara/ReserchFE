@@ -28,7 +28,7 @@ const MyProfile: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   const initialName =
-    user?.name || user?.fullName || user?.email?.split('@')[0] || '';
+    user?.name || (user as any)?.fullName || user?.email?.split('@')[0] || '';
   const initialEmail = user?.email || '';
   const initialPhone = (user as any)?.phone || '';
   const initialFarm = (user as any)?.farmName || (user as any)?.location || '';
@@ -50,7 +50,7 @@ const MyProfile: React.FC = () => {
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
-    .map((n) => n[0]?.toUpperCase())
+    .map((n: string) => n[0]?.toUpperCase())
     .join('');
 
   const handleSave = async () => {
