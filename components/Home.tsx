@@ -29,7 +29,7 @@ const FeatureCard = ({
   title: string;
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
-  gradient: string[];
+  gradient: readonly [string, string, ...string[]];
   stats?: string;
   onPress: () => void;
 }) => {
@@ -238,7 +238,6 @@ export default function Home() {
         text: "Sign Out",
         style: "destructive",
         onPress: () => {
-          // Navigate to SignIn screen and reset navigation stack
           navigation.reset({
             index: 0,
             routes: [{ name: "SignIn" as any }],
@@ -259,10 +258,9 @@ export default function Home() {
         >
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Hero Header */}
             <View
               style={{
                 paddingTop: 20,
@@ -352,7 +350,6 @@ export default function Home() {
               </Text>
             </View>
 
-            {/* Quick Stats */}
             <View style={{ paddingHorizontal: 14, marginTop: -30 }}>
               <View style={{ flexDirection: "row", marginBottom: 20 }}>
                 <QuickStatCard
@@ -376,7 +373,6 @@ export default function Home() {
               </View>
             </View>
 
-            {/* Main Features */}
             <View style={{ paddingHorizontal: 20 }}>
               <View
                 style={{
@@ -432,6 +428,24 @@ export default function Home() {
               />
 
               <FeatureCard
+                title="Robot Control"
+                subtitle="Control your field robot for movement, inspection, and smart monitoring tasks"
+                icon="game-controller"
+                gradient={["#0f766e", "#14b8a6"]}
+                stats="Live Control"
+                onPress={() => navigation.navigate("RobotControl")}
+              />
+
+              <FeatureCard
+                title="Soil pH Testing"
+                subtitle="Measure soil pH level and monitor acidity or alkalinity for better crop health"
+                icon="flask"
+                gradient={["#b45309", "#f59e0b"]}
+                stats="pH Monitoring"
+                onPress={() => navigation.navigate("SoilPHTesting")}
+              />
+
+              <FeatureCard
                 title="Soil"
                 subtitle="Get soil conditions"
                 icon="partly-sunny"
@@ -441,7 +455,6 @@ export default function Home() {
               />
             </View>
 
-            {/* Tips Section */}
             <View
               style={{
                 marginHorizontal: 20,
@@ -494,13 +507,11 @@ export default function Home() {
               />
             </View>
 
-            {/* Bottom Spacing */}
             <View style={{ height: 20 }} />
           </ScrollView>
         </LinearGradient>
       </View>
 
-      {/* Bottom Navigation */}
       <View
         style={{
           position: "absolute",
@@ -518,16 +529,18 @@ export default function Home() {
           elevation: 10,
         }}
       >
-        <View
-          style={{
-            flexDirection: "row",
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
             paddingHorizontal: 12,
             paddingVertical: 10,
+            alignItems: "center",
           }}
         >
           <TouchableOpacity
             activeOpacity={0.8}
-            style={{ flex: 1, alignItems: "center", paddingHorizontal: 4 }}
+            style={{ width: 72, alignItems: "center", marginRight: 6 }}
             onPress={() => navigation.navigate("Home")}
           >
             <View
@@ -550,7 +563,7 @@ export default function Home() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={{ flex: 1, alignItems: "center", paddingHorizontal: 4 }}
+            style={{ width: 72, alignItems: "center", marginRight: 6 }}
             onPress={() => navigation.navigate("PestDetection")}
           >
             <View
@@ -573,7 +586,7 @@ export default function Home() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={{ flex: 1, alignItems: "center", paddingHorizontal: 4 }}
+            style={{ width: 72, alignItems: "center", marginRight: 6 }}
             onPress={() => navigation.navigate("Disease")}
           >
             <View
@@ -596,7 +609,7 @@ export default function Home() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={{ flex: 1, alignItems: "center", paddingHorizontal: 4 }}
+            style={{ width: 72, alignItems: "center", marginRight: 6 }}
             onPress={() => navigation.navigate("PineappleDetection")}
           >
             <View
@@ -619,7 +632,53 @@ export default function Home() {
 
           <TouchableOpacity
             activeOpacity={0.8}
-            style={{ flex: 1, alignItems: "center", paddingHorizontal: 4 }}
+            style={{ width: 72, alignItems: "center", marginRight: 6 }}
+            onPress={() => navigation.navigate("RobotControl")}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                backgroundColor: "#f3f4f6",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 4,
+              }}
+            >
+              <Ionicons name="game-controller-outline" size={22} color="#6b7280" />
+            </View>
+            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>
+              Robot
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={{ width: 72, alignItems: "center", marginRight: 6 }}
+            onPress={() => navigation.navigate("SoilPHTesting")}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                backgroundColor: "#f3f4f6",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 4,
+              }}
+            >
+              <Ionicons name="flask-outline" size={22} color="#6b7280" />
+            </View>
+            <Text style={{ fontSize: 10, fontWeight: "500", color: "#6b7280" }}>
+              Soil pH
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={{ width: 72, alignItems: "center" }}
             onPress={() => navigation.navigate("Profile")}
           >
             <View
@@ -639,7 +698,7 @@ export default function Home() {
               Profile
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </View>
     </View>
   );

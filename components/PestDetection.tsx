@@ -35,9 +35,17 @@ type HistoryItem = {
   risk: "Low" | "Medium" | "High";
 };
 
+type EarlyStageInfo = {
+  stage: "Early" | "Moderate" | "Advanced";
+  stageColor: string;
+  stageBg: string;
+  summary: string;
+  detectPoints: string[];
+  nextStep: string;
+};
+
 // ✅ USING NODE BACKEND (Express) => POST http://<IP>:3001/api/predict
-// Backend multer should be: upload.single("image")  => FormData key must be "image"
-const API_URL = "http://192.168.8.181:3001/api/predict";
+const API_URL = "http://172.20.10.9:3001/api/predict";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -77,6 +85,144 @@ const getRiskColor = (risk: "Low" | "Medium" | "High") => {
         badge: "#10b981",
       };
   }
+};
+
+const getEarlyStageInfo = (
+  label: string,
+  confidence: number
+): EarlyStageInfo => {
+  const l = (label || "").toLowerCase();
+
+  if (l === "mealybug") {
+    if (confidence < 0.75) {
+      return {
+        stage: "Early",
+        stageColor: "#b45309",
+        stageBg: "#fef3c7",
+        summary:
+          "The pest may be in an early visible stage. Small localized clusters are likely starting to form.",
+        detectPoints: [
+          "Tiny white cotton-like spots visible",
+          "Pest presence appears localized to small areas",
+          "Leaf surface damage is still limited",
+          "Check leaf bases and joints carefully",
+          "Look for ants moving near infected zones",
+        ],
+        nextStep:
+          "Inspect nearby leaves and leaf bases within 24 hours and re-scan with a closer image.",
+      };
+    }
+
+    if (confidence < 0.9) {
+      return {
+        stage: "Moderate",
+        stageColor: "#92400e",
+        stageBg: "#fde68a",
+        summary:
+          "The infestation appears to be developing. Visible clusters are more established.",
+        detectPoints: [
+          "White cotton clusters are easier to see",
+          "Pest spread is beyond a single small point",
+          "Possible leaf yellowing may begin",
+          "Honeydew or sticky surface may appear",
+          "Check multiple surrounding plants",
+        ],
+        nextStep:
+          "Begin field inspection immediately and isolate heavily affected plants if needed.",
+      };
+    }
+
+    return {
+      stage: "Advanced",
+      stageColor: "#991b1b",
+      stageBg: "#fee2e2",
+      summary:
+        "The pest is strongly visible and may already be well established on the plant.",
+      detectPoints: [
+        "Large visible mealybug clusters present",
+        "Spread likely beyond one leaf zone",
+        "Possible weakening of plant vigor",
+        "High chance of continued spread nearby",
+        "Urgent field-level inspection is needed",
+      ],
+      nextStep:
+        "Take immediate control action and inspect surrounding plants for similar infestation.",
+    };
+  }
+
+  if (l === "thrips") {
+    if (confidence < 0.75) {
+      return {
+        stage: "Early",
+        stageColor: "#1d4ed8",
+        stageBg: "#dbeafe",
+        summary:
+          "Early thrips symptoms may be starting, but signs are still subtle.",
+        detectPoints: [
+          "Fine silvery streaks may be beginning",
+          "Tiny feeding damage may be present",
+          "Symptoms are still light and patchy",
+          "Inspect young leaves closely",
+          "Look for tiny black spots or surface roughness",
+        ],
+        nextStep:
+          "Re-scan a close-up image of the affected leaf surface in natural light.",
+      };
+    }
+
+    if (confidence < 0.9) {
+      return {
+        stage: "Moderate",
+        stageColor: "#92400e",
+        stageBg: "#fef3c7",
+        summary:
+          "Thrips activity is more visible and may start affecting plant growth.",
+        detectPoints: [
+          "Silvery or bronze leaf marks are visible",
+          "Damage is spreading across leaf area",
+          "Young leaves may show distortion",
+          "Black specks may be noticeable",
+          "Plant stress may start increasing",
+        ],
+        nextStep:
+          "Inspect surrounding leaves and begin monitoring the plant group closely.",
+      };
+    }
+
+    return {
+      stage: "Advanced",
+      stageColor: "#991b1b",
+      stageBg: "#fee2e2",
+      summary:
+        "The visible damage suggests a more established thrips infestation.",
+      detectPoints: [
+        "Clear silvering or scarring is visible",
+        "Larger surface area is affected",
+        "Young leaf distortion may be stronger",
+        "Nearby plants should be inspected immediately",
+        "The infestation may spread quickly if ignored",
+      ],
+      nextStep:
+        "Take rapid action to reduce spread and confirm infestation level across nearby plants.",
+    };
+  }
+
+  return {
+    stage: "Early",
+    stageColor: "#065f46",
+    stageBg: "#d1fae5",
+    summary:
+      "No strong advanced pest pattern is visible from this result. A closer image may improve early-stage detection.",
+    detectPoints: [
+      "Capture a closer image of the affected area",
+      "Focus on leaf base, joints, or damaged leaf surface",
+      "Use natural daylight if possible",
+      "Avoid blurred or distant images",
+      "Inspect the surrounding plants manually",
+    ],
+    nextStep:
+      "Take another close-up image and compare any new symptom changes after 24–48 hours.",
+  };
 };
 
 const PestDetection: React.FC = () => {
@@ -215,7 +361,11 @@ const PestDetection: React.FC = () => {
     );
   }, [result]);
 
-  // Animation when result appears
+  const earlyStageInfo = useMemo(() => {
+    if (!result) return null;
+    return getEarlyStageInfo(result.label, result.confidence);
+  }, [result]);
+
   React.useEffect(() => {
     if (result) {
       Animated.parallel([
@@ -237,7 +387,6 @@ const PestDetection: React.FC = () => {
     }
   }, [result, fadeAnim, scaleAnim]);
 
-  // ✅ Stop alarm when leaving this screen (important)
   React.useEffect(() => {
     return () => {
       stopAlarm();
@@ -288,7 +437,7 @@ const PestDetection: React.FC = () => {
     setResult(null);
     setProcessingTime(null);
     setShowImageOptions(false);
-    stopAlarm(); // ✅ stop any alarm
+    stopAlarm();
   };
 
   const captureFromCamera = async () => {
@@ -309,7 +458,7 @@ const PestDetection: React.FC = () => {
     setResult(null);
     setProcessingTime(null);
     setShowImageOptions(false);
-    stopAlarm(); // ✅ stop any alarm
+    stopAlarm();
   };
 
   const predict = async () => {
@@ -332,7 +481,6 @@ const PestDetection: React.FC = () => {
           ? "image/jpeg"
           : "image/jpeg";
 
-      // ✅ KEY MUST BE "image" for Node multer: upload.single("image")
       formData.append(
         "image",
         {
@@ -347,7 +495,6 @@ const PestDetection: React.FC = () => {
         body: formData,
         headers: {
           Accept: "application/json",
-          // ❌ DO NOT set Content-Type for FormData in React Native (boundary issue)
         },
       });
 
@@ -366,7 +513,6 @@ const PestDetection: React.FC = () => {
       setProcessingTime(endTime - startTime);
       setResult(normalized);
 
-      // ✅ Voice + Alarm (risk based)
       const pct = normalized.confidence * 100;
       await speakByRisk(normalized.label, pct);
 
@@ -398,16 +544,18 @@ const PestDetection: React.FC = () => {
       `Scientific Name: ${pestInfo.scientificName}\n` +
       `Confidence Level: ${confidencePct?.toFixed(1)}%\n` +
       `Risk Assessment: ${pestInfo.risk}\n` +
+      `Early Stage: ${earlyStageInfo?.stage ?? "—"}\n` +
       `Detection Time: ${processingTime ?? "—"}ms\n\n` +
       `📋 Symptoms:\n${pestInfo.symptoms
+        .map((s, i) => `${i + 1}. ${s}`)
+        .join("\n")}\n\n` +
+      `🔍 Early Stage Detect Points:\n${(earlyStageInfo?.detectPoints ?? [])
         .map((s, i) => `${i + 1}. ${s}`)
         .join("\n")}\n\n` +
       `✅ Immediate Actions:\n${pestInfo.actions
         .map((a, i) => `${i + 1}. ${a}`)
         .join("\n")}\n\n` +
-      `🛡️ Prevention:\n${pestInfo.prevention
-        .map((p, i) => `${i + 1}. ${p}`)
-        .join("\n")}\n\n` +
+      `➡ Next Step:\n${earlyStageInfo?.nextStep ?? "Monitor the plant closely"}\n\n` +
       `Generated by Pineapple Pest Detection AI`;
 
     await Share.share({ message: msg });
@@ -436,7 +584,6 @@ const PestDetection: React.FC = () => {
           end={{ x: 1, y: 1 }}
           style={{ flex: 1 }}
         >
-          {/* Professional Header */}
           <View
             style={{
               paddingHorizontal: 20,
@@ -571,7 +718,6 @@ const PestDetection: React.FC = () => {
             contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Stats Cards */}
             <View style={{ paddingHorizontal: 20, marginTop: 8 }}>
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View
@@ -652,7 +798,6 @@ const PestDetection: React.FC = () => {
               </View>
             </View>
 
-            {/* Image Preview Card */}
             <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
               <View
                 style={{
@@ -701,7 +846,7 @@ const PestDetection: React.FC = () => {
                         setImageUri(null);
                         setResult(null);
                         setProcessingTime(null);
-                        stopAlarm(); // ✅ stop any alarm
+                        stopAlarm();
                       }}
                       activeOpacity={0.7}
                     >
@@ -815,7 +960,6 @@ const PestDetection: React.FC = () => {
               </View>
             </View>
 
-            {/* Action Buttons */}
             {imageUri && (
               <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
                 <TouchableOpacity
@@ -900,7 +1044,6 @@ const PestDetection: React.FC = () => {
               </View>
             )}
 
-            {/* Detection Result */}
             {result && (
               <Animated.View
                 style={{
@@ -922,7 +1065,6 @@ const PestDetection: React.FC = () => {
                     elevation: 6,
                   }}
                 >
-                  {/* Result Header */}
                   <View
                     style={{
                       flexDirection: "row",
@@ -994,7 +1136,6 @@ const PestDetection: React.FC = () => {
                     </TouchableOpacity>
                   </View>
 
-                  {/* Pest Info Card */}
                   <View
                     style={{
                       marginTop: 20,
@@ -1054,7 +1195,7 @@ const PestDetection: React.FC = () => {
                       </View>
                     </View>
 
-                    <View style={{ marginTop: 14, flexDirection: "row", gap: 16 }}>
+                    <View style={{ marginTop: 14, flexDirection: "row", gap: 16, flexWrap: "wrap" }}>
                       <View style={{ flexDirection: "row", alignItems: "center" }}>
                         <Ionicons name="analytics" size={16} color={riskColors.text} />
                         <Text style={{ color: riskColors.text, fontWeight: "600", fontSize: 14, marginLeft: 6 }}>
@@ -1072,7 +1213,200 @@ const PestDetection: React.FC = () => {
                     </View>
                   </View>
 
-                  {/* Description */}
+                  {earlyStageInfo && (
+                    <View style={{ marginTop: 22 }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginBottom: 10,
+                        }}
+                      >
+                        <Ionicons name="scan" size={20} color="#7c3aed" />
+                        <Text
+                          style={{
+                            color: "#111827",
+                            fontWeight: "700",
+                            fontSize: 17,
+                            marginLeft: 8,
+                          }}
+                        >
+                          Early Stage Detection
+                        </Text>
+                      </View>
+
+                      <View
+                        style={{
+                          backgroundColor: earlyStageInfo.stageBg,
+                          borderRadius: 14,
+                          padding: 16,
+                          borderWidth: 1.5,
+                          borderColor: earlyStageInfo.stageColor,
+                        }}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 10,
+                            flexWrap: "wrap",
+                            gap: 10,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              color: "#111827",
+                              fontSize: 18,
+                              fontWeight: "800",
+                            }}
+                          >
+                            Stage: {earlyStageInfo.stage}
+                          </Text>
+
+                          <View
+                            style={{
+                              backgroundColor: earlyStageInfo.stageColor,
+                              borderRadius: 20,
+                              paddingHorizontal: 12,
+                              paddingVertical: 6,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: "#fff",
+                                fontSize: 12,
+                                fontWeight: "700",
+                              }}
+                            >
+                              Early Warning
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text
+                          style={{
+                            color: "#374151",
+                            fontSize: 14,
+                            lineHeight: 22,
+                            marginBottom: 14,
+                          }}
+                        >
+                          {earlyStageInfo.summary}
+                        </Text>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginBottom: 10,
+                          }}
+                        >
+                          <Ionicons name="locate" size={18} color="#7c3aed" />
+                          <Text
+                            style={{
+                              color: "#111827",
+                              fontWeight: "700",
+                              fontSize: 15,
+                              marginLeft: 8,
+                            }}
+                          >
+                            How detected points
+                          </Text>
+                        </View>
+
+                        {earlyStageInfo.detectPoints.map((point, idx) => (
+                          <View
+                            key={idx}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "flex-start",
+                              marginBottom: 10,
+                            }}
+                          >
+                            <View
+                              style={{
+                                width: 22,
+                                height: 22,
+                                borderRadius: 11,
+                                backgroundColor: earlyStageInfo.stageColor,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginRight: 10,
+                                marginTop: 1,
+                              }}
+                            >
+                              <Text
+                                style={{
+                                  color: "#fff",
+                                  fontSize: 11,
+                                  fontWeight: "700",
+                                }}
+                              >
+                                {idx + 1}
+                              </Text>
+                            </View>
+
+                            <Text
+                              style={{
+                                color: "#374151",
+                                fontSize: 14,
+                                lineHeight: 22,
+                                flex: 1,
+                              }}
+                            >
+                              {point}
+                            </Text>
+                          </View>
+                        ))}
+
+                        <View
+                          style={{
+                            marginTop: 8,
+                            backgroundColor: "rgba(255,255,255,0.7)",
+                            borderRadius: 12,
+                            padding: 14,
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "flex-start",
+                            }}
+                          >
+                            <Ionicons
+                              name="arrow-forward-circle"
+                              size={20}
+                              color={earlyStageInfo.stageColor}
+                              style={{ marginRight: 10, marginTop: 2 }}
+                            />
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={{
+                                  color: "#111827",
+                                  fontWeight: "700",
+                                  fontSize: 15,
+                                  marginBottom: 4,
+                                }}
+                              >
+                                Recommended Next Step
+                              </Text>
+                              <Text
+                                style={{
+                                  color: "#374151",
+                                  fontSize: 14,
+                                  lineHeight: 22,
+                                }}
+                              >
+                                {earlyStageInfo.nextStep}
+                              </Text>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
                   <View style={{ marginTop: 22 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                       <Ionicons name="information-circle" size={20} color="#059669" />
@@ -1085,7 +1419,6 @@ const PestDetection: React.FC = () => {
                     </Text>
                   </View>
 
-                  {/* Symptoms */}
                   <View style={{ marginTop: 22 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                       <Ionicons name="warning" size={20} color="#f59e0b" />
@@ -1114,7 +1447,6 @@ const PestDetection: React.FC = () => {
                     ))}
                   </View>
 
-                  {/* Immediate Actions */}
                   <View style={{ marginTop: 22 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                       <Ionicons name="flash" size={20} color="#dc2626" />
@@ -1143,7 +1475,6 @@ const PestDetection: React.FC = () => {
                     ))}
                   </View>
 
-                  {/* Prevention */}
                   <View style={{ marginTop: 22 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                       <Ionicons name="shield-checkmark" size={20} color="#3b82f6" />
@@ -1159,7 +1490,6 @@ const PestDetection: React.FC = () => {
                     ))}
                   </View>
 
-                  {/* Biological Control */}
                   <View style={{ marginTop: 22 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                       <Ionicons name="leaf" size={20} color="#10b981" />
@@ -1175,7 +1505,6 @@ const PestDetection: React.FC = () => {
                     ))}
                   </View>
 
-                  {/* Chemical Control */}
                   <View style={{ marginTop: 22 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                       <Ionicons name="flask" size={20} color="#8b5cf6" />
@@ -1191,7 +1520,6 @@ const PestDetection: React.FC = () => {
                     ))}
                   </View>
 
-                  {/* Warning Footer */}
                   <View
                     style={{
                       marginTop: 22,
@@ -1219,7 +1547,6 @@ const PestDetection: React.FC = () => {
         </LinearGradient>
       </View>
 
-      {/* Image Options Modal */}
       <Modal
         visible={showImageOptions}
         transparent
@@ -1357,7 +1684,6 @@ const PestDetection: React.FC = () => {
         </TouchableOpacity>
       </Modal>
 
-      {/* History Modal */}
       <Modal
         visible={showHistory}
         animationType="slide"

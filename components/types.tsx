@@ -23,4 +23,6 @@ export type RootTabParamList = {
   PineappleDetection: undefined;
   SignIn: undefined;
   Weather: undefined;
+  RobotControl: undefined;
+  SoilPHTesting: undefined;
 };

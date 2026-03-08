@@ -12,6 +12,8 @@ import SignUp from "../components/SignUp";
 import Home from "../components/Home";
 import Profile from "../components/Profile";
 import Disease from "../components/Disease";
+import RobotControl from "@/components/RobotControl";
+import SoilPHTesting from "@/components/SoilPHTesting";
 import PestDetection from "@/components/PestDetection";
 import PineappleDetection from "../components/PineappleDetection";
 import DetectionResults from "@/components/DetectionResults";
@@ -68,6 +70,8 @@ const AppNavigator: React.FC = () => {
         />
         <Stack.Screen name="DetectionResults" component={DetectionResults} />
         <Stack.Screen name="PlantTracker" component={PlantTracker} />
+        <Stack.Screen name="RobotControl" component={RobotControl} />
+        <Stack.Screen name="SoilPHTesting" component={SoilPHTesting} />
       </Stack.Navigator>
     </NavigationContainer>
   );
