@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { v4 as uuidv4 } from "react-native-uuid";
+import uuid from "react-native-uuid";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addPlant,
@@ -35,7 +35,6 @@ const PlantTracker: React.FC = () => {
   const selectedPlant = plants.find((p) => p.id === selectedPlantId);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const [plantName, setPlantName] = useState("");
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
@@ -53,12 +52,17 @@ const PlantTracker: React.FC = () => {
       return;
     }
 
+    const nowIso = new Date().toISOString();
+    const defaultStage: GrowthStage = "seedling";
+
     const newPlant: Plant = {
-      id: uuidv4() as string,
+      id: String(uuid.v4()),
       name: plantName,
       location: location || "Unknown",
-      dateAdded: new Date().toISOString(),
-      currentStage: GrowthStage.SEEDLING,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+
+      currentStage: defaultStage,
       currentHealthStatus: HealthStatus.HEALTHY,
       detectionHistory: [],
       notes: notes,
@@ -113,22 +117,24 @@ const PlantTracker: React.FC = () => {
 
   const getGrowthColor = (stage: GrowthStage) => {
     const colors: Record<GrowthStage, string> = {
-      [GrowthStage.SEEDLING]: "#3b82f6",
-      [GrowthStage.VEGETATIVE]: "#10b981",
-      [GrowthStage.FLOWERING]: "#f59e0b",
-      [GrowthStage.FRUITING]: "#ec4899",
-      [GrowthStage.MATURE]: "#6366f1",
+      seedling: "#3b82f6",
+      vegetative: "#10b981",
+      pre_flowering: "#8b5cf6",
+      flowering: "#f59e0b",
+      fruiting: "#ec4899",
+      mature: "#6366f1",
     };
     return colors[stage] || "#6b7280";
   };
 
   const getStageIcon = (stage: GrowthStage) => {
     const icons: Record<GrowthStage, string> = {
-      [GrowthStage.SEEDLING]: "sprout",
-      [GrowthStage.VEGETATIVE]: "leaf",
-      [GrowthStage.FLOWERING]: "flower",
-      [GrowthStage.FRUITING]: "fruit-grapes",
-      [GrowthStage.MATURE]: "crown",
+      seedling: "sprout",
+      vegetative: "leaf",
+      pre_flowering: "flower-outline",
+      flowering: "flower",
+      fruiting: "fruit-grapes",
+      mature: "crown",
     };
     return icons[stage] || "leaf";
   };
@@ -162,7 +168,7 @@ const PlantTracker: React.FC = () => {
           {plants.length === 0 ? (
             <View className="flex-1 items-center justify-center px-4">
               <MaterialCommunityIcons
-                name="flower-petal"
+                name={"sprout" as any}
                 size={80}
                 color="#d1d5db"
               />
@@ -190,7 +196,6 @@ const PlantTracker: React.FC = () => {
                   key={plant.id}
                   onPress={() => {
                     dispatch(selectPlant(plant.id));
-                    setShowDetailModal(true);
                   }}
                   className="bg-white rounded-3xl p-4 mb-4 shadow-sm border border-gray-200"
                   activeOpacity={0.7}
@@ -227,7 +232,7 @@ const PlantTracker: React.FC = () => {
                       className="flex-1 p-3 rounded-2xl"
                       style={{
                         backgroundColor: getHealthBadgeColor(
-                          plant.currentHealthStatus
+                          plant.currentHealthStatus ?? HealthStatus.HEALTHY
                         ).bg,
                       }}
                     >
@@ -235,18 +240,25 @@ const PlantTracker: React.FC = () => {
                         Stage
                       </Text>
                       <View className="flex-row items-center">
+                        {(() => {
+                          const stage: GrowthStage =
+                            plant.currentStage ?? "seedling";
+                          return (
+                            <>
                         <MaterialCommunityIcons
-                          name={getStageIcon(plant.currentStage)}
+                          name={getStageIcon(stage) as any}
                           size={20}
-                          color={getGrowthColor(plant.currentStage)}
+                          color={getGrowthColor(stage)}
                         />
                         <Text
                           className="text-sm font-bold ml-1"
-                          style={{ color: getGrowthColor(plant.currentStage) }}
+                          style={{ color: getGrowthColor(stage) }}
                         >
-                          {plant.currentStage.charAt(0).toUpperCase() +
-                            plant.currentStage.slice(1)}
+                          {stage.charAt(0).toUpperCase() + stage.slice(1)}
                         </Text>
+                            </>
+                          );
+                        })()}
                       </View>
                     </View>
 
@@ -255,7 +267,7 @@ const PlantTracker: React.FC = () => {
                       className="flex-1 p-3 rounded-2xl"
                       style={{
                         backgroundColor: getHealthBadgeColor(
-                          plant.currentHealthStatus
+                          plant.currentHealthStatus ?? HealthStatus.HEALTHY
                         ).bg,
                       }}
                     >
@@ -263,31 +275,33 @@ const PlantTracker: React.FC = () => {
                         Health
                       </Text>
                       <View className="flex-row items-center">
+                        {(() => {
+                          const health: HealthStatus =
+                            plant.currentHealthStatus ?? HealthStatus.HEALTHY;
+                          return (
+                            <>
                         <MaterialCommunityIcons
                           name={
-                            plant.currentHealthStatus === HealthStatus.HEALTHY
+                            health === HealthStatus.HEALTHY
                               ? "heart"
-                              : plant.currentHealthStatus ===
-                                HealthStatus.WARNING
+                              : health === HealthStatus.WARNING
                               ? "alert-circle"
                               : "heart-broken"
                           }
                           size={20}
-                          color={
-                            getHealthBadgeColor(plant.currentHealthStatus).text
-                          }
+                          color={getHealthBadgeColor(health).text}
                         />
                         <Text
                           className="text-sm font-bold ml-1"
                           style={{
-                            color: getHealthBadgeColor(
-                              plant.currentHealthStatus
-                            ).text,
+                            color: getHealthBadgeColor(health).text,
                           }}
                         >
-                          {plant.currentHealthStatus.charAt(0).toUpperCase() +
-                            plant.currentHealthStatus.slice(1)}
+                          {health.charAt(0).toUpperCase() + health.slice(1)}
                         </Text>
+                            </>
+                          );
+                        })()}
                       </View>
                     </View>
 
@@ -442,10 +456,14 @@ const PlantDetailView: React.FC<{ plant: Plant; onBack: () => void }> = ({
         {/* Quick Stats */}
         <View className="bg-white rounded-3xl p-6 mb-4 shadow-sm">
           <View className="flex-row justify-between mb-4">
-            <StatCard label="Stage" value={plant.currentStage} icon="leaf" />
+            <StatCard
+              label="Stage"
+              value={plant.currentStage ?? "seedling"}
+              icon="leaf"
+            />
             <StatCard
               label="Health"
-              value={plant.currentHealthStatus}
+              value={String(plant.currentHealthStatus ?? HealthStatus.HEALTHY)}
               icon="heart"
             />
             <StatCard
@@ -458,7 +476,7 @@ const PlantDetailView: React.FC<{ plant: Plant; onBack: () => void }> = ({
           <View className="border-t border-gray-200 pt-4">
             <Text className="text-gray-600 text-sm mb-2">Added</Text>
             <Text className="text-gray-800 font-bold">
-              {new Date(plant.dateAdded).toLocaleDateString()}
+              {new Date(plant.createdAt).toLocaleDateString()}
             </Text>
           </View>
         </View>
