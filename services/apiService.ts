@@ -4,9 +4,29 @@ import {
   HealthStatus,
   HealthIssue,
 } from "../types/detection";
+import { environment } from "../environment/environment";
 
 // API Configuration
-const API_BASE_URL = "http://192.168.8.181:3001"; // your PC IP
+const API_BASE_URL = (environment?.API_BASE_URL || "http://192.168.8.181:3001")
+  .replace(/\/+$/, "");
+
+const DEFAULT_TIMEOUT_MS = 30000;
+
+const fetchWithTimeout = async (
+  input: RequestInfo,
+  init: RequestInit & { timeoutMs?: number } = {}
+): Promise<Response> => {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...rest } = init;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, { ...rest, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
 
 export class APIError extends Error {
   constructor(public message: string, public statusCode?: number) {
@@ -143,13 +163,14 @@ export const detectPestFromImage = async (
       formData.append("location", metadata.location);
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/predict`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/predict`, {
       method: "POST",
       body: formData,
       headers: {
         Accept: "application/json",
         // IMPORTANT: do NOT set Content-Type for FormData in React Native
       },
+      timeoutMs: DEFAULT_TIMEOUT_MS,
     });
 
     const parsed = await safeJson(response);
@@ -165,7 +186,14 @@ export const detectPestFromImage = async (
     return parsed.ok ? parsed.data : parsed.data;
   } catch (error) {
     if (error instanceof APIError) throw error;
-    throw new APIError(error instanceof Error ? error.message : "Failed to analyze image");
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new APIError(
+        "Request timed out. Check server IP/port and network connection."
+      );
+    }
+    throw new APIError(
+      error instanceof Error ? error.message : "Failed to analyze image"
+    );
   }
 };
 
@@ -191,24 +219,26 @@ export const detectPineappleGrowth = async (
     "/api/predict",
   ];
 
-  const formData = buildImageFormData(imageUri, {
-    farmer_id: metadata?.farmerId,
-    region: metadata?.region,
-    language: metadata?.language || "en",
-    days_from_planting: metadata?.daysFromPlanting,
-    location: metadata?.location,
-  });
+  const buildFormData = () =>
+    buildImageFormData(imageUri, {
+      farmer_id: metadata?.farmerId,
+      region: metadata?.region,
+      language: metadata?.language || "en",
+      days_from_planting: metadata?.daysFromPlanting,
+      location: metadata?.location,
+    });
 
   let lastError: APIError | null = null;
 
   for (const path of endpoints) {
     try {
-      const response = await fetch(`${API_BASE_URL}${path}`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
         method: "POST",
-        body: formData,
+        body: buildFormData(),
         headers: {
           Accept: "application/json",
         },
+        timeoutMs: DEFAULT_TIMEOUT_MS,
       });
 
       const parsed = await safeJson(response);
@@ -230,9 +260,17 @@ export const detectPineappleGrowth = async (
       if (error instanceof APIError) {
         lastError = error;
       } else {
-        lastError = new APIError(
-          error instanceof Error ? error.message : "Failed to analyze pineapple growth"
-        );
+        if (error instanceof Error && error.name === "AbortError") {
+          lastError = new APIError(
+            "Request timed out. Check server IP/port and network connection."
+          );
+        } else {
+          lastError = new APIError(
+            error instanceof Error
+              ? error.message
+              : "Failed to analyze pineapple growth"
+          );
+        }
       }
     }
   }
